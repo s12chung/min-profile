@@ -1,0 +1,24 @@
+header.layout {
+  @include container_left_right;
+
+  .logo {
+    height: 2em;
+  }
+
+  nav {
+    font-size: $small;
+    @include container_spaced(1.5em);
+  }
+}
+
+section.layout {
+  padding: 0.75em 1em;
+  max-width: 27rem;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1.5em;
+}
+
+section.content {
+  margin-top: 3em;
+}

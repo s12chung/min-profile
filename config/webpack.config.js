@@ -47,6 +47,7 @@ const cssRegex = /\.css$/;
 const cssModuleRegex = /\.module\.css$/;
 const sassRegex = /\.(scss|sass)$/;
 const sassModuleRegex = /\.module\.(scss|sass)$/;
+const themeSassRegex = /\.theme\.(scss|sass)$/;
 
 // This is the production and development configuration.
 // It is focused on developer experience, fast rebuilds, and a minimal bundle.
@@ -321,9 +322,19 @@ module.exports = function(webpackEnv) {
         PnpWebpackPlugin.moduleLoader(module),
       ],
     },
+    externals: {
+      'sass.js': 'Sass'
+    },
     module: {
       strictExportPresence: true,
       rules: [
+        {
+          test: [
+            themeSassRegex,
+            /\.html$/,
+          ],
+          use: 'raw-loader',
+        },
         // Disable require.ensure as it's not a standard language feature.
         { parser: { requireEnsure: false } },
 
@@ -459,7 +470,10 @@ module.exports = function(webpackEnv) {
             // extensions .module.scss or .module.sass
             {
               test: sassRegex,
-              exclude: sassModuleRegex,
+              exclude: [
+                  sassModuleRegex,
+                  themeSassRegex,
+              ],
               use: getStyleLoaders(
                 {
                   importLoaders: 2,
@@ -499,7 +513,7 @@ module.exports = function(webpackEnv) {
               // its runtime that would otherwise be processed through "file" loader.
               // Also exclude `html` and `json` extensions so they get processed
               // by webpacks internal loaders.
-              exclude: [/\.(js|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/],
+              exclude: [/\.(js|mjs|jsx|ts|tsx)$/, /\.html$/, /\.json$/, themeSassRegex],
               options: {
                 name: 'static/media/[name].[hash:8].[ext]',
               },
