@@ -2,43 +2,6 @@
 // _functions.scss
 //
 
-/// Removes a specific item from a list.
-/// @author Hugo Giraudel
-/// @param {list} $list List.
-/// @param {integer} $index Index.
-/// @return {list} Updated list.
-@function remove-nth($list, $index) {
-
-        $result: null;
-
-        @if type-of($index) != number {
-                @warn "$index: #{quote($index)} is not a number for `remove-nth`.";
-        }
-        @else if $index == 0 {
-                @warn "List index 0 must be a non-zero integer for `remove-nth`.";
-        }
-        @else if abs($index) > length($list) {
-                @warn "List index is #{$index} but list is only #{length($list)} item long for `remove-nth`.";
-        }
-        @else {
-
-                $result: ();
-                $index: if($index < 0, length($list) + $index + 1, $index);
-
-                @for $i from 1 through length($list) {
-
-                        @if $i != $index {
-                                $result: append($result, nth($list, $i));
-                        }
-
-                }
-
-        }
-
-        @return $result;
-
-}
-
 /// Replaces a substring within another string.
 /// @author Hugo Giraudel
 /// @param {string} $string String.
@@ -73,17 +36,6 @@
 }
 
 // Mixins.
-
-/// Wraps @content in vendorized keyframe blocks.
-/// @param {string} $name Name.
-@mixin keyframes($name) {
-
-        @-moz-keyframes #{$name} { @content; }
-        @-webkit-keyframes #{$name} { @content; }
-        @-ms-keyframes #{$name} { @content; }
-        @keyframes #{$name} { @content; }
-
-}
 
 /// Vendorizes a declaration's property and/or value(s).
 /// @param {string} $property Property.
@@ -250,43 +202,6 @@ $palette: (
                 border2-bg:		rgba(0,0,0,0.1)
         )
 );
-
-/// Removes a specific item from a list.
-/// @author Hugo Giraudel
-/// @param {list} $list List.
-/// @param {integer} $index Index.
-/// @return {list} Updated list.
-@function remove-nth($list, $index) {
-
-        $result: null;
-
-        @if type-of($index) != number {
-                @warn "$index: #{quote($index)} is not a number for `remove-nth`.";
-        }
-        @else if $index == 0 {
-                @warn "List index 0 must be a non-zero integer for `remove-nth`.";
-        }
-        @else if abs($index) > length($list) {
-                @warn "List index is #{$index} but list is only #{length($list)} item long for `remove-nth`.";
-        }
-        @else {
-
-                $result: ();
-                $index: if($index < 0, length($list) + $index + 1, $index);
-
-                @for $i from 1 through length($list) {
-
-                        @if $i != $index {
-                                $result: append($result, nth($list, $i));
-                        }
-
-                }
-
-        }
-
-        @return $result;
-
-}
 
 //
 // _vendor.scss
@@ -566,25 +481,6 @@ $vendor-values: (
 
 }
 
-/// Encodes a SVG data URL so IE doesn't choke (via codepen.io/jakob-e/pen/YXXBrp).
-/// @param {string} $svg SVG data URL.
-/// @return {string} Encoded SVG data URL.
-@function svg-url($svg) {
-
-        $svg: str-replace($svg, '"', '\'');
-        $svg: str-replace($svg, '%', '%25');
-        $svg: str-replace($svg, '<', '%3C');
-        $svg: str-replace($svg, '>', '%3E');
-        $svg: str-replace($svg, '&', '%26');
-        $svg: str-replace($svg, '#', '%23');
-        $svg: str-replace($svg, '{', '%7B');
-        $svg: str-replace($svg, '}', '%7D');
-        $svg: str-replace($svg, ';', '%3B');
-
-        @return url("data:image/svg+xml;charset=utf8,#{$svg}");
-
-}
-
 //
 // _breakpoints.scss
 //
@@ -823,10 +719,6 @@ $breakpoints: () !global;
 /// @param {string} $keys Key(s).
 /// @return {string} Value.
 @function val($map, $keys...) {
-
-        @if nth($keys, 1) == null {
-                $keys: remove-nth($keys, 1);
-        }
 
         @each $key in $keys {
                 $map: map-get($map, $key);
