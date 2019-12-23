@@ -545,45 +545,6 @@ $vendor-values: (
 // _mixins.scss
 //
 
-/// Makes an element's :before pseudoelement a FontAwesome icon.
-/// @param {string} $content Optional content value to use.
-/// @param {string} $category Optional category to use.
-/// @param {string} $where Optional pseudoelement to target (before or after).
-@mixin icon($content: false, $category: regular, $where: before) {
-
-        text-decoration: none;
-
-        &:#{$where} {
-
-                @if $content {
-                        content: $content;
-                }
-
-                -moz-osx-font-smoothing: grayscale;
-                -webkit-font-smoothing: antialiased;
-                display: inline-block;
-                font-style: normal;
-                font-variant: normal;
-                text-rendering: auto;
-                line-height: 1;
-                text-transform: none !important;
-
-                @if ($category == brands) {
-                        font-family: 'Font Awesome 5 Brands';
-                }
-                @elseif ($category == solid) {
-                        font-family: 'Font Awesome 5 Free';
-                        font-weight: 900;
-                }
-                @else {
-                        font-family: 'Font Awesome 5 Free';
-                        font-weight: 400;
-                }
-
-        }
-
-}
-
 /// Applies padding to an element, taking the current element-margin value into account.
 /// @param {mixed} $tb Top/bottom padding.
 /// @param {mixed} $lr Left/right padding.
@@ -981,7 +942,6 @@ body {
                 color: _palette(fg-bold);
                 font-weight: _font(weight-extrabold);
                 letter-spacing: _size(letter-spacing-alt);
-                line-height: 1em;
                 margin: 0 0 (_size(element-margin) * 0.5) 0;
                 text-transform: uppercase;
 
