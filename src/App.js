@@ -3,13 +3,18 @@ import _ from 'lodash';
 import './App.css';
 
 import Sass from 'sass.js';
+
 import AWS from 'aws-sdk';
 import awsConfig from './aws.json'
 
 import Mustache from 'mustache'
+import metadata from './metadata.json';
+
 import themeHtml from './theme/main.html'
+import resetScss from './theme/reset.theme.scss'
 import layoutScss from './theme/layout.theme.scss'
 import configScss from './theme/config.theme.scss'
+import landingScss from './theme/landing.theme.scss'
 
 
 class App extends Component {
@@ -37,21 +42,15 @@ class App extends Component {
 }
 
 function htmlFilePromise() {
-  let view = {
-    title: "My name",
-    calc: function () {
-      return 20;
-    }
-  };
-
   return new Promise((resolve) => {
-    resolve({ "index.html": { Body: Mustache.render(themeHtml, view),  ContentType: "text/html" } })
+    resolve({ "index.html": { Body: Mustache.render(themeHtml, metadata),  ContentType: "text/html" } })
   });
 }
 
 function cssFilePromise() {
+  let scssFiles = [resetScss, configScss, layoutScss, landingScss];
   return new Promise((resolve, reject) => {
-    Sass.compile(configScss + '\n' + layoutScss, function (result) {
+    Sass.compile(scssFiles.join("\n"), function (result) {
       console.log("SASS Result");
       console.log(result);
       if (result.status === 0) {
