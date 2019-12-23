@@ -1,13 +1,16 @@
 header.layout {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  padding: 1.5em;
+
   @include container_left_right;
 
-  .logo {
-    height: 2em;
-  }
-
   nav {
-    font-size: $small;
-    @include container_spaced(1.5em);
+    font-size: 1em;
+    .language + .language::before {
+      content: " | ";
+    }
   }
 }
 
