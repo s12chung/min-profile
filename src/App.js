@@ -11,7 +11,6 @@ import Mustache from 'mustache'
 import metadata from './metadata.json';
 
 import themeHtml from './theme/main.html'
-import resetScss from './theme/reset.theme.scss'
 import layoutScss from './theme/layout.theme.scss'
 import configScss from './theme/config.theme.scss'
 import landingScss from './theme/landing.theme.scss'
@@ -48,7 +47,7 @@ function htmlFilePromise() {
 }
 
 function cssFilePromise() {
-  let scssFiles = [resetScss, configScss, layoutScss, landingScss];
+  let scssFiles = [configScss, layoutScss, landingScss];
   return new Promise((resolve, reject) => {
     Sass.compile(scssFiles.join("\n"), function (result) {
       console.log("SASS Result");
