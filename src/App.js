@@ -4,8 +4,6 @@ import update from 'immutability-helper';
 import {Container, Row, Col, Nav } from 'react-bootstrap';
 import _ from 'lodash';
 
-import './App.scss';
-
 import Sass from 'sass.js';
 
 import AWS from 'aws-sdk';
@@ -35,7 +33,15 @@ class App extends Component {
 
     this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations };
 
-    Promise.all([htmlFilePromise(), cssFilePromise()]).then((files) => {
+    let view = {
+      languages: this.allTranslations().map((translation) => translation.lang),
+      currentTranslation: Object.assign({ markdownHtml: marked(metadata.mainTranslation.markdown) }, metadata.mainTranslation),
+      json: {
+        langCodes: JSON.stringify(this.allTranslations().map((translation) => translation.codes.split(',')).flat())
+      }
+    };
+
+    Promise.all([htmlFilePromise(view), cssFilePromise()]).then((files) => {
       return files.reduce((a, b) => Object.assign(a, b));
     }).then((files) => {
       this.setState({ value: "Uploading" });
@@ -55,6 +61,10 @@ class App extends Component {
     return this.state.translations.findIndex((translation) => translation.lang === this.state.selectedTranslationLang);
   }
 
+  allTranslations() {
+    return [this.state.mainTranslation].concat(this.state.translations);
+  }
+
   handleMainTranslationChange = (change)=> {
     this.setState({ mainTranslation: Object.assign({}, this.state.mainTranslation, change)}, ()=> {
       tLog(this.state.mainTranslation);
@@ -71,12 +81,11 @@ class App extends Component {
   };
 
   promptLang = (lang)=> {
-    let allTranslations = [this.state.mainTranslation].concat(this.state.translations);
     lang = window.prompt("Please enter a lang (2 characters, lowercase)", lang);
 
     let errorMessage;
     if (_.isUndefined(lang) || _.isEmpty(lang)) errorMessage = 'lang is empty. Aborting';
-    for (let translation of allTranslations) {
+    for (let translation of this.allTranslations()) {
       if (translation.lang === lang) {
         errorMessage = `lang (${lang}) already exists. Aborting`;
         break;
@@ -169,12 +178,8 @@ class App extends Component {
   }
 }
 
-function htmlFilePromise() {
+function htmlFilePromise(view) {
   return new Promise((resolve) => {
-    let view = {
-      languages: metadata.languages,
-      currentTranslation: Object.assign({ markdownHtml: marked(metadata.mainTranslation.markdown) }, metadata.mainTranslation)
-    };
     resolve({ "index.html": { Body: Mustache.render(themeHtml, view),  ContentType: "text/html" } })
   });
 }

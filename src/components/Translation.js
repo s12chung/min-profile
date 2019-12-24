@@ -6,6 +6,7 @@ import FieldComponent, { FieldContext } from "./FieldComponent";
 import { PromptContext } from "../App";
 
 const inputsKeys = [
+    'codes',
     'htmlTitle',
     'title',
     'subtitle',
