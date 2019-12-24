@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Button, Form, FormControl} from 'react-bootstrap';
+import {ButtonToolbar, Button, Form, FormControl} from 'react-bootstrap';
 import _ from 'lodash';
 
 import FieldComponent, { FieldContext } from "./FieldComponent";
@@ -52,6 +52,11 @@ class Translation extends Component {
                 { this.fieldComponentForKey( 'markdown', (id, handleChange, value) => {
                     return <FormControl as='textarea' id={id} value={value} onChange={handleChange} rows='20' />
                 })}
+
+                <ButtonToolbar className='container-spaced'>
+                    {_.isFunction(this.props.onTranslationReorder) && <Button onClick={this.props.onTranslationReorder}>Reorder</Button>}
+                    {_.isFunction(this.props.onTranslationDelete) && <Button onClick={this.props.onTranslationDelete} variant='danger'>Delete</Button>}
+                </ButtonToolbar>
             </Form>
         )
     }

@@ -73,13 +73,13 @@ class App extends Component {
 
   promptLang = (lang)=> {
     let allTranslations = [this.state.mainTranslation].concat(this.state.translations);
-    lang = window.prompt("Please enter a lang", lang);
+    lang = window.prompt("Please enter a lang (2 characters, lowercase)", lang);
 
     let errorMessage;
     if (_.isUndefined(lang) || _.isEmpty(lang)) errorMessage = 'lang is empty. Aborting';
     for (let translation of allTranslations) {
       if (translation.lang === lang) {
-        errorMessage = `lang (${lang}) already exists. Aborting.`;
+        errorMessage = `lang (${lang}) already exists. Aborting`;
         break;
       }
     }
@@ -96,6 +96,48 @@ class App extends Component {
     this.setState({ translations: update(this.state.translations, {[index]: { $merge: change }}) }, () => {
       tLog(this.state.translations[index]);
     });
+  };
+
+  handleTranslationReorder = () => {
+    let from = this.selectedTranslationIndex();
+    let maxTo = this.state.translations.length - 1;
+    let to = window.prompt(`Please enter an index from 0 to ${maxTo}`, from);
+    to = _.parseInt(to, 10);
+
+    let errorMessage;
+    if (_.isNaN(to)) errorMessage = 'index is invalid. Aborting';
+    if (to < 0) errorMessage = 'index < 0. Aborting';
+    if (to > maxTo) errorMessage = `index > ${maxTo}. Aborting`;
+    if (!_.isUndefined(errorMessage)) {
+      window.alert(errorMessage);
+      return;
+    }
+
+    if (from === to) return;
+
+    let translation = this.state.translations[from];
+    this.setState({ translations: update(this.state.translations, { $splice: [
+           [from, 1],
+           [to, 0, translation]
+        ] })});
+  };
+
+  handleTranslationDelete = () => {
+    let lang = window.prompt(`Please type the lang to confirm deletion: ${this.state.selectedTranslationLang}`);
+    if (lang !== this.state.selectedTranslationLang) {
+      window.alert("Typed lang does not match.");
+      return;
+    }
+
+    let from = this.selectedTranslationIndex();
+    let state = { translations: update(this.state.translations, { $splice: [[from, 1],] }) };
+
+    if (this.state.translations.length > 1) {
+      let to = (from + 1) % this.state.translations.length;
+      state.selectedTranslationLang = this.state.translations[to].lang
+    }
+
+    this.setState(state);
   };
 
   render () {
@@ -116,7 +158,9 @@ class App extends Component {
                     {translations.map((t) => <Nav.Item key={t.lang}><Nav.Link eventKey={t.lang}>{t.lang}</Nav.Link></Nav.Item>)}
                     <Nav.Item key={PLUS_LANG}><Nav.Link eventKey={PLUS_LANG}>{PLUS_LANG}</Nav.Link></Nav.Item>
                   </Nav>
-                  <Translation object={translation} onChange={this.handleTranslationChange}/>
+                  {!_.isUndefined(translation) && (
+                      <Translation object={translation} onChange={this.handleTranslationChange} onTranslationReorder={this.handleTranslationReorder} onTranslationDelete={this.handleTranslationDelete}/>
+                  )}
                 </Col>
               </Row>
           </Container>
