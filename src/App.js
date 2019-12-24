@@ -23,6 +23,7 @@ import Translation from './components/Translation';
 
 
 const PLUS_LANG = "+";
+const LANG_CODE_SEPARATOR = ',';
 const tLog = throttledLog();
 
 export const PromptContext = React.createContext({});
@@ -33,11 +34,26 @@ class App extends Component {
 
     this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations };
 
+    let allTranslations = this.allTranslations();
+    for (let translation of allTranslations) {
+      translation.markdownHtml = marked(translation.markdown)
+    }
+    let allTranslationsMap = _.keyBy(allTranslations, 'lang');
+
+    let langCodeToLang = {};
+    for (let translation of allTranslations) {
+      for (let code of translation.codes.split(LANG_CODE_SEPARATOR)) {
+        langCodeToLang[code] = translation.lang;
+      }
+    }
+
     let view = {
-      languages: this.allTranslations().map((translation) => translation.lang),
-      currentTranslation: Object.assign({ markdownHtml: marked(metadata.mainTranslation.markdown) }, metadata.mainTranslation),
+      languages: allTranslations.map((translation) => translation.lang),
+      currentTranslation: allTranslationsMap[this.state.mainTranslation.lang],
       json: {
-        langCodes: JSON.stringify(this.allTranslations().map((translation) => translation.codes.split(',')).flat())
+        langCodeToLang: JSON.stringify(langCodeToLang),
+        langCodes: JSON.stringify(_.values(langCodeToLang)),
+        translations:  JSON.stringify(allTranslationsMap)
       }
     };
 

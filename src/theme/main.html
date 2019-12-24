@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{currentTranslation.htmlTitle}}</title>
+    <title data-i18n="htmlTitle">{{currentTranslation.htmlTitle}}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
     <meta content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
@@ -23,17 +23,15 @@
     <header class="layout">
         <div></div>
         <nav>
-            {{#languages}}
-                <span class="language">{{.}}</span>
-            {{/languages}}
+            {{#languages}}<span class="language"><a href="#" data-behavior="change-lang" data-lang="{{.}}">{{.}}</a></span>{{/languages}}
         </nav>
     </header>
 
     <!-- Banner -->
     <section id="banner">
         <div class="inner">
-            <h2>{{currentTranslation.title}}</h2>
-            <p>{{currentTranslation.subtitle}}</p>
+            <h2 data-i18n="title">{{currentTranslation.title}}</h2>
+            <p data-i18n="subtitle">{{currentTranslation.subtitle}}</p>
         </div>
         <div class="more arrow-down-container">
             <a data-scroll href="#one" class="scrolly">
@@ -43,36 +41,53 @@
     </section>
 </div>
 <section id="one" class="layout">
-    <section class="content">
-        {{{currentTranslation.markdownHtml}}}
-    </section>
+    <section class="content" data-i18n="markdownHtml">{{{currentTranslation.markdownHtml}}}</section>
 </section>
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-browser-languagedetector/4.0.1/i18nextBrowserLanguageDetector.min.js"></script>
 <script>
-    (function() {
+    (function($) {
         // simple implementations https://github.com/wiziple/browser-lang/blob/6a449286542dd98b1d2915ba5a28ba959055cd2f/src/index.js#L30
         // vs the real one https://github.com/i18next/i18next/blob/270904f6369ee9bbda059c3186fcea7baf9eb15d/src/LanguageUtils.js#L31
 
+        var langCodes = {{{ json.langCodes }}};
+        var langCodeToLang = {{{ json.langCodeToLang }}};
+        var translations = {{{ json.translations }}};
+
         function simplifyLang(lang) {
-            for (var i = 0; i < languages.length; i++) {
-                var whitelistedLang = languages[i];
+            for (var i = 0; i < langCodes.length; i++) {
+                var whitelistedLang = langCodes[i];
                 var simplified = lang.slice(0, whitelistedLang.length);
                 if (simplified === whitelistedLang) return simplified;
             }
         }
 
-        var languages = {{{ json.langCodes }}};
         var i18n = new i18nextBrowserLanguageDetector({
             languageUtils: {
                 formatLanguageCode: function(lang) { return lang.toLowerCase().replace(/-/, "_"); },
                 isWhitelisted: function(lang) { return simplifyLang(lang) !== undefined; }
             }
         });
-        var detectedLang = i18n.detect();
-        if (detectedLang === undefined) detectedLang = languages[0];
-    })();
+        var detectedLangCode = i18n.detect();
+        if (detectedLangCode === undefined) detectedLangCode = langCodes[0];
+        detectedLangCode = simplifyLang(detectedLangCode);
+
+        function datai18n(field) { return "[data-i18n='" + field + "']"; }
+        function changeTranslation(langCode) {
+            $.each(translations[langCodeToLang[langCode]], function(k, v) {
+                $(datai18n(k)).html(v);
+            });
+        }
+
+        changeTranslation(detectedLangCode);
+
+        function dataBehavior(behavior) { return "[data-behavior='" + behavior + "']"; }
+        $(dataBehavior('change-lang')).click(function (e) {
+            e.preventDefault();
+            changeTranslation($(this).attr('data-lang'));
+        });
+    })(jQuery);
 </script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/smooth-scroll/16.1.0/smooth-scroll.min.js"></script>

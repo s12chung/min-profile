@@ -830,6 +830,9 @@ body {
                 letter-spacing: _size(letter-spacing) * 0.5;
         }
 
+        a {
+                color: _palette(fg-bold);
+        }
         h2 {
                 color: _palette(fg-bold);
                 font-weight: _font(weight-extrabold);

@@ -3,13 +3,24 @@ header.layout {
   top: 0;
   width: 100%;
   padding: 1.5em;
+  z-index: 5;
 
   @include container_left_right;
 
   nav {
     font-size: 1em;
     .language + .language::before {
-      content: " | ";
+      content: "\00a0|\00a0";
+    }
+  }
+}
+
+body.is-mobile {
+  header.layout {
+    nav {
+      .language + .language::before {
+        content: "\00a0\00a0\00a0|\00a0\00a0\00a0";
+      }
     }
   }
 }
