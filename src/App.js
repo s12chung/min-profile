@@ -19,10 +19,14 @@ import configScss from './theme/config.theme.scss'
 import landingScss from './theme/landing.theme.scss'
 
 import { throttledLog } from "./lib/log";
+import { newTranslation } from "./models/translation";
 import Translation from './components/Translation';
 
 
+const PLUS_LANG = "+";
 const tLog = throttledLog();
+
+export const PromptContext = React.createContext({});
 
 class App extends Component {
   constructor(props) {
@@ -59,7 +63,32 @@ class App extends Component {
   };
 
   selectTranslation = (lang) => {
+    if (lang === PLUS_LANG) {
+      lang = this.promptLang();
+      if (_.isUndefined(lang)) return;
+      this.setState({ translations: update(this.state.translations,{ $push: [newTranslation(lang)] }) })
+    }
     this.setState({ selectedTranslationLang: lang });
+  };
+
+  promptLang = (lang)=> {
+    let allTranslations = [this.state.mainTranslation].concat(this.state.translations);
+    lang = window.prompt("Please enter a lang", lang);
+
+    let errorMessage;
+    if (_.isUndefined(lang) || _.isEmpty(lang)) errorMessage = 'lang is empty. Aborting';
+    for (let translation of allTranslations) {
+      if (translation.lang === lang) {
+        errorMessage = `lang (${lang}) already exists. Aborting.`;
+        break;
+      }
+    }
+    if (!_.isUndefined(errorMessage)) {
+      window.alert(errorMessage);
+      return;
+    }
+
+    return lang;
   };
 
   handleTranslationChange = (change) => {
@@ -71,25 +100,28 @@ class App extends Component {
 
   render () {
     let translation = this.state.translations[this.selectedTranslationIndex()];
+    let translations = this.state.translations;
     return (
-        <Container>
-          <Row>
-            <Col><Translation object={this.state.mainTranslation} onChange={this.handleMainTranslationChange}/></Col>
-            <Col>
-              <Nav activeKey={this.state.selectedTranslationLang} variant="tabs" onSelect={this.selectTranslation}>
-                {this.state.translations.map((translation) => {
-                  return (
-                      <Nav.Item key={translation.lang}>
-                        <Nav.Link eventKey={translation.lang}>{ translation.lang }</Nav.Link>
-                      </Nav.Item>
-                  )
-                })}
-              </Nav>
-              <Translation object={translation} onChange={this.handleTranslationChange}/>
-            </Col>
-          </Row>
-        </Container>
-    )
+        <PromptContext.Provider value={{promptLang: this.promptLang}}>
+          <Container>
+              <Row>
+                <Col>
+                  <Nav activeKey={this.state.mainTranslation.lang} variant="tabs">
+                    <Nav.Item><Nav.Link eventKey={this.state.mainTranslation.lang}>{this.state.mainTranslation.lang}</Nav.Link></Nav.Item>
+                  </Nav>
+                  <Translation object={this.state.mainTranslation} onChange={this.handleMainTranslationChange}/>
+                </Col>
+                <Col>
+                  <Nav activeKey={this.state.selectedTranslationLang} variant="tabs" onSelect={this.selectTranslation}>
+                    {translations.map((t) => <Nav.Item key={t.lang}><Nav.Link eventKey={t.lang}>{t.lang}</Nav.Link></Nav.Item>)}
+                    <Nav.Item key={PLUS_LANG}><Nav.Link eventKey={PLUS_LANG}>{PLUS_LANG}</Nav.Link></Nav.Item>
+                  </Nav>
+                  <Translation object={translation} onChange={this.handleTranslationChange}/>
+                </Col>
+              </Row>
+          </Container>
+        </PromptContext.Provider>
+  )
   }
 }
 
