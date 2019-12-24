@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{title}}</title>
+    <title>{{currentTranslation.htmlTitle}}</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
     <meta content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
@@ -32,8 +32,8 @@
     <!-- Banner -->
     <section id="banner">
         <div class="inner">
-            <h2>{{title}}</h2>
-            <p>{{callout}}</p>
+            <h2>{{currentTranslation.title}}</h2>
+            <p>{{currentTranslation.subtitle}}</p>
         </div>
         <div class="more arrow-down-container">
             <a data-scroll href="#one" class="scrolly">
@@ -44,18 +44,7 @@
 </div>
 <section id="one" class="layout">
     <section class="content">
-        <p>{{text1}}</p>
-        <img src="images/snu.svg"/>
-        <p>{{text2}}</p>
-        <img src="images/kids.PNG"/>
-        <p>{{text3}}</p>
-        <img src="images/sandbox.jpeg"/>
-        <p>{{text4}}</p>
-        <img src="images/everykit.gif"/>
-        <p>{{text5}}</p>
-        <iframe width="560" height="315" src="https://www.youtube.com/embed/c5oABdIiEe4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        <p>{{text6}}</p>
-        <img src="images/profile.jpg"/>
+        {{{currentTranslation.markdownHtml}}}
     </section>
 </section>
 

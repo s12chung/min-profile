@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import marked from 'marked';
 import update from 'immutability-helper';
 import {Container, Row, Col, Nav } from 'react-bootstrap';
 import _ from 'lodash';
@@ -33,8 +34,6 @@ class App extends Component {
     super(props);
 
     this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations };
-
-    return;
 
     Promise.all([htmlFilePromise(), cssFilePromise()]).then((files) => {
       return files.reduce((a, b) => Object.assign(a, b));
@@ -145,6 +144,7 @@ class App extends Component {
     let translations = this.state.translations;
     return (
         <PromptContext.Provider value={{promptLang: this.promptLang}}>
+          {this.state.value}
           <Container>
               <Row>
                 <Col>
@@ -171,7 +171,11 @@ class App extends Component {
 
 function htmlFilePromise() {
   return new Promise((resolve) => {
-    resolve({ "index.html": { Body: Mustache.render(themeHtml, metadata),  ContentType: "text/html" } })
+    let view = {
+      languages: metadata.languages,
+      currentTranslation: Object.assign({ markdownHtml: marked(metadata.mainTranslation.markdown) }, metadata.mainTranslation)
+    };
+    resolve({ "index.html": { Body: Mustache.render(themeHtml, view),  ContentType: "text/html" } })
   });
 }
 
