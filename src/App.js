@@ -1,6 +1,10 @@
 import React, {Component} from 'react';
 import _ from 'lodash';
-import './App.css';
+import './App.scss';
+
+import Container from 'react-bootstrap/Container';
+import Row from 'react-bootstrap/Row';
+import Col from 'react-bootstrap/Col';
 
 import Sass from 'sass.js';
 
@@ -33,9 +37,22 @@ class App extends Component {
     });
   }
 
+  componentDidMount(){
+    document.title = metadata.adminTitle;
+  }
+
   render () {
     return (
-        <div>{ this.state.value }</div>
+        <Container>
+          <Row>
+            <Col>1 of 2</Col>
+            <Col>2 of 2</Col>
+          </Row>
+          <Row>
+            <Col>1 of 2</Col>
+            <Col>{ this.state.value }</Col>
+          </Row>
+        </Container>
     )
   }
 }
@@ -72,6 +89,10 @@ function uploadFiles(files) {
 }
 
 function uploadFile(filename, props) {
+  // prevent uploading for a while
+  return new Promise((resolve, reject)  => {
+    resolve();
+  });
   return new AWS.S3.ManagedUpload({
     params: Object.assign({ Key: filename }, _.pick(awsConfig, ['Bucket']) , props)
   }).promise();
