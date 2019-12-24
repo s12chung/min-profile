@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Form, FormControl, FormGroup, FormLabel} from 'react-bootstrap';
+import {Form, FormControl} from 'react-bootstrap';
 import FieldComponent, { FieldContext } from "./FieldComponent";
 
 const inputsKeys = [
@@ -10,14 +10,9 @@ const inputsKeys = [
 ];
 
 class Translation extends Component {
-    constructor(props) {
-        super(props);
-        this.handleChange = this.handleChange.bind(this);
-    }
-
-    handleChange(change) {
+    handleChange = (change)=> {
         this.props.onChange(change);
-    }
+    };
 
     render() {
         const translation = this.props.object;

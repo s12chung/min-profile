@@ -7,13 +7,12 @@ export const FieldContext = React.createContext({});
 class FieldComponent extends Component {
     constructor(props) {
         super(props);
-        this.handleChange = this.handleChange.bind(this);
         this.state = { id: [this.props.k, randomString()]  }
     }
 
-    handleChange(e) {
+    handleChange = (e)=> {
         this.props.onChange({ [this.props.k]: e.target.value });
-    }
+    };
 
     render() {
         return (

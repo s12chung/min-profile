@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
-import { Container, Row, Col } from 'react-bootstrap';
+import update from 'immutability-helper';
+import {Container, Row, Col, Nav } from 'react-bootstrap';
 import _ from 'lodash';
 
 import './App.scss';
@@ -17,15 +18,17 @@ import layoutScss from './theme/layout.theme.scss'
 import configScss from './theme/config.theme.scss'
 import landingScss from './theme/landing.theme.scss'
 
+import { throttledLog } from "./lib/log";
 import Translation from './components/Translation';
 
+
+const tLog = throttledLog();
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.handleChange = this.handleChange.bind(this);
 
-    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation };
+    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations };
 
     return;
 
@@ -41,22 +44,49 @@ class App extends Component {
     });
   }
 
-  componentDidMount(){
+  componentDidMount() {
     document.title = metadata.adminTitle;
   }
 
-  handleChange(change) {
-    this.setState({ mainTranslation: Object.assign({}, this.state.mainTranslation, change)}, () => {
-      console.log(this.state.mainTranslation);
-    });
+  selectedTranslationIndex() {
+    return this.state.translations.findIndex((translation) => translation.lang === this.state.selectedTranslationLang);
   }
 
+  handleMainTranslationChange = (change)=> {
+    this.setState({ mainTranslation: Object.assign({}, this.state.mainTranslation, change)}, ()=> {
+      tLog(this.state.mainTranslation);
+    });
+  };
+
+  selectTranslation = (lang) => {
+    this.setState({ selectedTranslationLang: lang });
+  };
+
+  handleTranslationChange = (change) => {
+    let index = this.selectedTranslationIndex();
+    this.setState({ translations: update(this.state.translations, {[index]: { $merge: change }}) }, () => {
+      tLog(this.state.translations[index]);
+    });
+  };
+
   render () {
+    let translation = this.state.translations[this.selectedTranslationIndex()];
     return (
         <Container>
           <Row>
-            <Col><Translation object={this.state.mainTranslation} onChange={this.handleChange}/></Col>
-            <Col>{ this.state.value }</Col>
+            <Col><Translation object={this.state.mainTranslation} onChange={this.handleMainTranslationChange}/></Col>
+            <Col>
+              <Nav activeKey={this.state.selectedTranslationLang} variant="tabs" onSelect={this.selectTranslation}>
+                {this.state.translations.map((translation) => {
+                  return (
+                      <Nav.Item key={translation.lang}>
+                        <Nav.Link eventKey={translation.lang}>{ translation.lang }</Nav.Link>
+                      </Nav.Item>
+                  )
+                })}
+              </Nav>
+              <Translation object={translation} onChange={this.handleTranslationChange}/>
+            </Col>
           </Row>
         </Container>
     )
