@@ -1,10 +1,8 @@
 import React, {Component} from 'react';
+import { Container, Row, Col } from 'react-bootstrap';
 import _ from 'lodash';
-import './App.scss';
 
-import Container from 'react-bootstrap/Container';
-import Row from 'react-bootstrap/Row';
-import Col from 'react-bootstrap/Col';
+import './App.scss';
 
 import Sass from 'sass.js';
 
@@ -19,11 +17,17 @@ import layoutScss from './theme/layout.theme.scss'
 import configScss from './theme/config.theme.scss'
 import landingScss from './theme/landing.theme.scss'
 
+import Translation from './components/Translation';
+
 
 class App extends Component {
   constructor(props) {
     super(props);
-    this.state = { value: 'Processing' };
+    this.handleChange = this.handleChange.bind(this);
+
+    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation };
+
+    return;
 
     Promise.all([htmlFilePromise(), cssFilePromise()]).then((files) => {
       return files.reduce((a, b) => Object.assign(a, b));
@@ -41,15 +45,17 @@ class App extends Component {
     document.title = metadata.adminTitle;
   }
 
+  handleChange(change) {
+    this.setState({ mainTranslation: Object.assign({}, this.state.mainTranslation, change)}, () => {
+      console.log(this.state.mainTranslation);
+    });
+  }
+
   render () {
     return (
         <Container>
           <Row>
-            <Col>1 of 2</Col>
-            <Col>2 of 2</Col>
-          </Row>
-          <Row>
-            <Col>1 of 2</Col>
+            <Col><Translation object={this.state.mainTranslation} onChange={this.handleChange}/></Col>
             <Col>{ this.state.value }</Col>
           </Row>
         </Container>
@@ -89,10 +95,6 @@ function uploadFiles(files) {
 }
 
 function uploadFile(filename, props) {
-  // prevent uploading for a while
-  return new Promise((resolve, reject)  => {
-    resolve();
-  });
   return new AWS.S3.ManagedUpload({
     params: Object.assign({ Key: filename }, _.pick(awsConfig, ['Bucket']) , props)
   }).promise();
