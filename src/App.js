@@ -32,10 +32,10 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations, images: [], imagesReady: false };
+    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations, images: [], initialImages: undefined };
 
     getFiles('images/').then((files) => {
-      this.setState({ imagesReady: true, images: files })
+      this.setState({ initialImages: files })
     }).catch((e) => {
       console.log("Failure getting images", e);
     });
@@ -86,6 +86,28 @@ class App extends Component {
   allTranslations() {
     return [this.state.mainTranslation].concat(this.state.translations);
   }
+
+  validateImage = (file) => {
+    if (_.findIndex(this.state.images, (existing) => existing.name === file.name) === -1) {
+      return false;
+    }
+    return 'duplicate file name detected';
+  };
+
+  operationToImageSpec(operation, file) {
+    switch(operation) {
+      case 'add':
+        return {$push: [file]};
+      case 'remove':
+        return {$splice: [[this.state.images.indexOf(file), 1]]};
+      default:
+        return;
+    }
+  }
+
+  handleImagesChange = (operation, file) => {
+    this.setState({ images: update(this.state.images, this.operationToImageSpec(operation, file)) } );
+  };
 
   handleMainTranslationChange = (change)=> {
     this.setState({ mainTranslation: Object.assign({}, this.state.mainTranslation, change)}, ()=> {
@@ -179,7 +201,7 @@ class App extends Component {
               <Row>
                 <Col>
                   {this.state.value}
-                  <Uploader initialFiles={this.state.images} disabled={!this.state.imagesReady}/>
+                  <Uploader initialFiles={this.state.initialImages} onChange={this.handleImagesChange} validate={this.validateImage}/>
                 </Col>
               </Row>
               <Row>
