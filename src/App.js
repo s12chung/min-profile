@@ -4,10 +4,9 @@ import update from 'immutability-helper';
 import {Container, Row, Col, Nav } from 'react-bootstrap';
 import _ from 'lodash';
 
-import Sass from 'sass.js';
+import 'react-dropzone-uploader/dist/styles.css'
 
-import AWS from 'aws-sdk';
-import awsConfig from './aws.json'
+import Sass from 'sass.js';
 
 import Mustache from 'mustache'
 import metadata from './metadata.json';
@@ -19,8 +18,9 @@ import landingScss from './theme/landing.theme.scss'
 
 import { throttledLog } from "./lib/log";
 import { newTranslation } from "./models/translation";
+import { uploadFiles, getFiles } from './lib/s3'
+import Uploader from './components/Uploader';
 import Translation from './components/Translation';
-
 
 const PLUS_LANG = "+";
 const LANG_CODE_SEPARATOR = ',';
@@ -32,7 +32,13 @@ class App extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations };
+    this.state = { value: 'Processing', mainTranslation: metadata.mainTranslation, selectedTranslationLang: 'en', translations: metadata.translations, images: [], imagesReady: false };
+
+    getFiles('images/').then((files) => {
+      this.setState({ imagesReady: true, images: files })
+    }).catch((e) => {
+      console.log("Failure getting images", e);
+    });
 
     let allTranslations = this.allTranslations();
     for (let translation of allTranslations) {
@@ -65,7 +71,7 @@ class App extends Component {
     }).then(() => {
       this.setState({ value: "Success!" });
     }).catch((e) => {
-      this.setState({ value: `Failure: ${e}` });
+      this.setState({ value: `Failure Uploading: ${e}` });
     });
   }
 
@@ -169,8 +175,13 @@ class App extends Component {
     let translations = this.state.translations;
     return (
         <PromptContext.Provider value={{promptLang: this.promptLang}}>
-          {this.state.value}
           <Container>
+              <Row>
+                <Col>
+                  {this.state.value}
+                  <Uploader initialFiles={this.state.images} disabled={!this.state.imagesReady}/>
+                </Col>
+              </Row>
               <Row>
                 <Col>
                   <Nav activeKey={this.state.mainTranslation.lang} variant="tabs">
@@ -200,7 +211,7 @@ function htmlFilePromise(view) {
   });
 }
 
-function cssFilePromise() {
+export function cssFilePromise() {
   let scssFiles = [configScss, layoutScss, landingScss];
   return new Promise((resolve, reject) => {
     Sass.compile(scssFiles.join("\n"), function (result) {
@@ -216,19 +227,5 @@ function cssFilePromise() {
   });
 }
 
-function uploadFiles(files) {
-  AWS.config.update(_.pick(awsConfig, ['accessKeyId', 'secretAccessKey', 'region']));
-
-  let promises = Object.entries(files).map(([filename, props]) =>  {
-    return uploadFile(filename, props);
-  });
-  return Promise.all(promises);
-}
-
-function uploadFile(filename, props) {
-  return new AWS.S3.ManagedUpload({
-    params: Object.assign({ Key: filename }, _.pick(awsConfig, ['Bucket']) , props)
-  }).promise();
-}
 
 export default App;
