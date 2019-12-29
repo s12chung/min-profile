@@ -1,9 +1,3 @@
-@import "css/patterns";
-
-.container-spaced {
-  @include container_spaced(10px);
-}
-
 .uploader {
   height: 300px;
 }

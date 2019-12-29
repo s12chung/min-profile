@@ -39,10 +39,10 @@ class Translation extends Component {
             <Form>
                 { this.fieldComponentForKey( 'lang', (id, handleChange, value) => {
                     return (
-                        <div className='container-spaced'>
+                        <div className="d-flex">
                             <FormControl id={id} value={value} disabled={true}/>
                             <PromptContext.Consumer>
-                                {({ promptLang }) => <Button onClick={()=> promptLang(value)}>Change</Button>}
+                                {({ promptLang }) => <Button className="ml-1" variant="outline-primary" onClick={()=> promptLang(value)}>Change</Button>}
                             </PromptContext.Consumer>
                         </div>
                     )
@@ -54,9 +54,9 @@ class Translation extends Component {
                     return <FormControl as='textarea' id={id} value={value} onChange={handleChange} rows='20' />
                 })}
 
-                <ButtonToolbar className='container-spaced'>
-                    {_.isFunction(this.props.onTranslationReorder) && <Button onClick={this.props.onTranslationReorder}>Reorder</Button>}
-                    {_.isFunction(this.props.onTranslationDelete) && <Button onClick={this.props.onTranslationDelete} variant='danger'>Delete</Button>}
+                <ButtonToolbar className="d-flex justify-content-end">
+                    {_.isFunction(this.props.onTranslationReorder) && <Button className="m-1" variant="outline-primary" onClick={this.props.onTranslationReorder}>Reorder</Button>}
+                    {_.isFunction(this.props.onTranslationDelete) && <Button className="m-1" variant='outline-danger' onClick={this.props.onTranslationDelete}>Delete</Button>}
                 </ButtonToolbar>
             </Form>
         )
