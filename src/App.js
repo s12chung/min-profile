@@ -22,6 +22,7 @@ import Translations from "./components/Translations";
 import Uploader from './components/Uploader';
 import {throttledLog} from "./lib/log";
 
+const ADMIN_TITLE = window.location.hostname;
 const LANG_CODE_SEPARATOR = ',';
 const tLog = throttledLog();
 
@@ -86,7 +87,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    document.title = metadata.adminTitle;
+    document.title = ADMIN_TITLE;
   }
 
   download = () => {
@@ -131,7 +132,7 @@ class App extends Component {
     return (
           <Container>
               <Navbar>
-                <Navbar.Brand>{metadata.adminTitle}</Navbar.Brand>
+                <Navbar.Brand>{ADMIN_TITLE}</Navbar.Brand>
                 <Nav className="mr-auto">
                   {NAV_HEADERS.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
                 </Nav>
