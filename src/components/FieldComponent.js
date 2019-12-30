@@ -26,4 +26,14 @@ class FieldComponent extends Component {
     }
 }
 
+export function FieldComponentForKey(k, object, onChange, component) {
+    return (
+        <FieldComponent key={k} k={k} text={k} onChange={onChange}>
+            <FieldContext.Consumer>
+                {({ id, handleChange }) => component(id, handleChange, object[k])}
+            </FieldContext.Consumer>
+        </FieldComponent>
+    )
+}
+
 export default FieldComponent;

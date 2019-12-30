@@ -2,10 +2,10 @@ import React, {Component} from 'react';
 import {ButtonToolbar, Button, Form, FormControl} from 'react-bootstrap';
 import _ from 'lodash';
 
-import FieldComponent, { FieldContext } from "./FieldComponent";
+import { FieldComponentForKey } from "./FieldComponent";
 import { PromptContext } from "../App";
 
-const inputsKeys = [
+const INPUT_KEYS = [
     'codes',
     'htmlTitle',
     'title',
@@ -17,17 +17,6 @@ class Translation extends Component {
         this.props.onChange(change);
     };
 
-    fieldComponentForKey(k, component) {
-        const translation = this.props.object;
-        return (
-            <FieldComponent key={k} k={k} text={k} onChange={this.handleChange}>
-                <FieldContext.Consumer>
-                    {({ id, handleChange }) => component(id, handleChange, translation[k])}
-                </FieldContext.Consumer>
-            </FieldComponent>
-        )
-    }
-
     promptLang = ()=> {
         let lang = this.props.promptLang();
         if (_.isUndefined(lang)) return;
@@ -35,9 +24,10 @@ class Translation extends Component {
     };
 
     render() {
+        let translation = this.props.object;
         return (
             <Form>
-                { this.fieldComponentForKey( 'lang', (id, handleChange, value) => {
+                { FieldComponentForKey( 'lang', translation, this.handleChange,(id, handleChange, value) => {
                     return (
                         <div className="d-flex">
                             <FormControl id={id} value={value} disabled={true}/>
@@ -47,10 +37,10 @@ class Translation extends Component {
                         </div>
                     )
                 })}
-                {inputsKeys.map((k) => this.fieldComponentForKey(k, (id, handleChange, value) => {
+                {INPUT_KEYS.map((k) => FieldComponentForKey(k, translation, this.handleChange,(id, handleChange, value) => {
                     return <FormControl id={id} value={value} onChange={handleChange} />
                 }))}
-                { this.fieldComponentForKey( 'markdown', (id, handleChange, value) => {
+                { FieldComponentForKey( 'markdown', translation, this.handleChange, (id, handleChange, value) => {
                     return <FormControl as='textarea' id={id} value={value} onChange={handleChange} rows='20' />
                 })}
 

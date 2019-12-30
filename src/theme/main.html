@@ -16,6 +16,17 @@
 
     <link rel="stylesheet" media="all" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
     <link rel="stylesheet" media="all" href="index.css">
+
+    <style>
+        body.landing #page-wrapper,
+        body.is-mobile.landing #banner {
+            background-image: -moz-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("images/{{backgroundImage}}");
+            background-image: -webkit-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("images/{{backgroundImage}}");
+            background-image: -ms-linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("images/{{backgroundImage}}");
+            background-image: linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url("images/{{backgroundImage}}");
+        }
+
+    </style>
 </head>
 <body class="landing is-preload">
 <!-- Page Wrapper -->

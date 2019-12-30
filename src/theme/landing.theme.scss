@@ -1022,7 +1022,6 @@ body.is-preload {
 
 body.landing {
         #page-wrapper {
-                @include vendor('background-image', ('linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5))', 'url("images/background.jpg")'));
                 background-attachment: fixed;
                 background-position: center center;
                 background-repeat: no-repeat;
@@ -1038,7 +1037,6 @@ body.is-mobile {
                 }
 
                 #banner {
-                        @include vendor('background-image', ('linear-gradient(top, rgba(0,0,0,0.5), rgba(0,0,0,0.5))', 'url("images/background.jpg")'));
                         background-position: center center;
                         background-repeat: no-repeat;
                         background-size: cover;

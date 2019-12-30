@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Container, Row, Col, Navbar, Nav, ButtonToolbar, Button} from 'react-bootstrap';
+import {Container, Row, Col, Navbar, Nav, ButtonToolbar, Button, FormControl, Form} from 'react-bootstrap';
 import marked from 'marked';
 import update from 'immutability-helper';
 import _ from 'lodash';
@@ -21,6 +21,7 @@ import { reconcileFiles, getFiles } from './lib/s3'
 import Translations from "./components/Translations";
 import Uploader from './components/Uploader';
 import {throttledLog} from "./lib/log";
+import {FieldComponentForKey} from "./components/FieldComponent";
 
 const IMAGE_S3_PREFIX = 'images/';
 
@@ -29,6 +30,7 @@ const LANG_CODE_SEPARATOR = ',';
 const tLog = throttledLog();
 
 const NAV_HEADERS = ["Content"];
+const INPUT_KEYS = ["backgroundImage"];
 
 export const PromptContext = React.createContext({});
 
@@ -40,6 +42,8 @@ class App extends Component {
       isLoading: false,
       status: '',
       navIndex: 0,
+
+      backgroundImage: metadata.backgroundImage,
       translations: metadata.translations,
       images: [],
       initialImages: undefined
@@ -58,7 +62,7 @@ class App extends Component {
 
   generateFiles() {
     this.setStatus("Generating Files", true);
-    return Promise.all([htmlFilePromise(_.cloneDeep(this.state.translations)), cssFilePromise()]);
+    return Promise.all([htmlFilePromise(this.state.backgroundImage, _.cloneDeep(this.state.translations)), cssFilePromise()]);
   }
 
   componentDidMount() {
@@ -118,37 +122,56 @@ class App extends Component {
     });
   };
 
+  handleInputChange = (state) =>{
+    this.setState(state);
+  };
+
+  content() {
+    return (
+        <div>
+          <Row>
+            <Col md={8}>
+              <Uploader initialFiles={this.state.initialImages} onChange={this.handleImagesChange} validate={this.validateImage}/>
+            </Col>
+            <Col>
+              <Form>
+                {INPUT_KEYS.map((k) => FieldComponentForKey(k, this.state, this.handleInputChange, (id, handleChange, value) => {
+                  return <FormControl id={id} value={value} onChange={handleChange} />
+                }))}
+              </Form>
+            </Col>
+          </Row>
+          <Translations translations={this.state.translations} onChange={this.handleTranslationChange}/>
+        </div>
+    )
+  }
+
   render () {
     return (
-          <Container>
-              <Navbar>
-                <Navbar.Brand>{ADMIN_TITLE}</Navbar.Brand>
-                <Nav className="mr-auto">
-                  {NAV_HEADERS.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
-                  <div className="d-flex ml-3">
-                    { this.state.isLoading && <div className="lds-facebook"><div></div><div></div><div></div></div>  }
-                    <div className="align-self-center">{this.state.status}</div>
-                  </div>
-                </Nav>
+        <Container>
+            <Navbar>
+              <Navbar.Brand>{ADMIN_TITLE}</Navbar.Brand>
+              <Nav className="mr-auto">
+                {NAV_HEADERS.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
+                <div className="d-flex ml-3">
+                  { this.state.isLoading && <div className="lds-facebook"><div></div><div></div><div></div></div>  }
+                  <div className="align-self-center">{this.state.status}</div>
+                </div>
+              </Nav>
 
-                <ButtonToolbar>
-                  <Button className="m-1" variant="outline-secondary" onClick={this.download}>Download</Button>
-                  <Button className="m-1" variant="outline-primary">Save</Button>
-                  <Button className="m-1" onClick={this.deploy}>Deploy</Button>
-                </ButtonToolbar>
-              </Navbar>
-              <Row>
-                <Col>
-                  <Uploader initialFiles={this.state.initialImages} onChange={this.handleImagesChange} validate={this.validateImage}/>
-                </Col>
-              </Row>
-              <Translations translations={this.state.translations} onChange={this.handleTranslationChange}/>
-          </Container>
+              <ButtonToolbar>
+                <Button className="m-1" variant="outline-secondary" onClick={this.download}>Download</Button>
+                <Button className="m-1" variant="outline-primary">Save</Button>
+                <Button className="m-1" onClick={this.deploy}>Deploy</Button>
+              </ButtonToolbar>
+            </Navbar>
+            {this.content()}
+        </Container>
   )
   }
 }
 
-function htmlFilePromise(translations) {
+function htmlFilePromise(backgroundImage, translations) {
   return new Promise((resolve) => {
     for (let translation of translations) {
       translation.markdownHtml = marked(translation.markdown);
@@ -163,6 +186,7 @@ function htmlFilePromise(translations) {
     }
 
     let view = {
+      backgroundImage: backgroundImage,
       languages: translations.map((translation) => translation.lang),
       json: {
         langCodeToLang: JSON.stringify(langCodeToLang),
