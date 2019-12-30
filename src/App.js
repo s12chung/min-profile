@@ -17,10 +17,12 @@ import layoutScss from './theme/layout.theme.scss'
 import configScss from './theme/config.theme.scss'
 import landingScss from './theme/landing.theme.scss'
 
-import { uploadFiles, getFiles } from './lib/s3'
+import { reconcileFiles, getFiles } from './lib/s3'
 import Translations from "./components/Translations";
 import Uploader from './components/Uploader';
 import {throttledLog} from "./lib/log";
+
+const IMAGE_S3_PREFIX = 'images/';
 
 const ADMIN_TITLE = window.location.hostname;
 const LANG_CODE_SEPARATOR = ',';
@@ -43,19 +45,10 @@ class App extends Component {
       initialImages: undefined
     };
 
-    getFiles('images/').then((files) => {
+    getFiles(IMAGE_S3_PREFIX).then((files) => {
       this.setState({ initialImages: files })
     }).catch((e) => {
       console.log("Failure getting images", e);
-    });
-
-    this.generateFiles().then((files) => {
-      this.setStatus("Uploading", true);
-      return uploadFiles(files);
-    }).then(() => {
-      this.setStatus("Deployed!");
-    }).catch((e) => {
-      this.setStatus(`Failure Deploying: ${e}`);
     });
   }
 
@@ -65,30 +58,7 @@ class App extends Component {
 
   generateFiles() {
     this.setStatus("Generating Files", true);
-    for (let translation of this.state.translations) {
-      translation.markdownHtml = marked(translation.markdown);
-    }
-    let allTranslationsMap = _.keyBy(this.state.translations, 'lang');
-
-    let langCodeToLang = {};
-    for (let translation of this.state.translations) {
-      for (let code of translation.codes.split(LANG_CODE_SEPARATOR)) {
-        langCodeToLang[code] = translation.lang;
-      }
-    }
-
-    let view = {
-      languages: this.state.translations.map((translation) => translation.lang),
-      json: {
-        langCodeToLang: JSON.stringify(langCodeToLang),
-        langCodes: JSON.stringify(_.values(langCodeToLang)),
-        translations:  JSON.stringify(allTranslationsMap)
-      }
-    };
-
-    return Promise.all([htmlFilePromise(view), cssFilePromise()]).then((files) => {
-      return files.reduce((a, b) => Object.assign(a, b));
-    });
+    return Promise.all([htmlFilePromise(_.cloneDeep(this.state.translations)), cssFilePromise()]);
   }
 
   componentDidMount() {
@@ -99,16 +69,28 @@ class App extends Component {
     return this.generateFiles().then((files) => {
       this.setStatus("Generating Zip", true);
       let zip = new JSZip();
-      Object.entries(files).forEach(([filename, props]) =>  {
-        zip.file(filename, props.Body);
-      });
+      for (let file of files) {
+        zip.file(file.name, file.arrayBuffer());
+      }
       for (let file of this.state.images) {
-        zip.file(`images/${file.name}`, file.arrayBuffer());
+        zip.file(IMAGE_S3_PREFIX + file.name, file.arrayBuffer());
       }
 
       return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${ADMIN_TITLE}-${(new Date()).toISOString()}.zip`));
     }).then(() => {
       this.setStatus("");
+    });
+  };
+
+  deploy = () => {
+    return this.generateFiles().then((files) => {
+      this.setStatus("Uploading", true);
+      return Promise.all([reconcileFiles(files), reconcileFiles(this.state.images, IMAGE_S3_PREFIX)]);
+    }).then(() => {
+      this.setStatus("Deployed!");
+    }).catch((e) => {
+      console.log("Failure Deploying", e);
+      this.setStatus(`Failure Deploying: ${e}`);
     });
   };
 
@@ -152,7 +134,7 @@ class App extends Component {
                 <ButtonToolbar>
                   <Button className="m-1" variant="outline-secondary" onClick={this.download}>Download</Button>
                   <Button className="m-1" variant="outline-primary">Save</Button>
-                  <Button className="m-1" >Deploy</Button>
+                  <Button className="m-1" onClick={this.deploy}>Deploy</Button>
                 </ButtonToolbar>
               </Navbar>
               <Row>
@@ -166,9 +148,29 @@ class App extends Component {
   }
 }
 
-function htmlFilePromise(view) {
+function htmlFilePromise(translations) {
   return new Promise((resolve) => {
-    resolve({ "index.html": { Body: Mustache.render(themeHtml, view),  ContentType: "text/html" } })
+    for (let translation of translations) {
+      translation.markdownHtml = marked(translation.markdown);
+    }
+    let allTranslationsMap = _.keyBy(translations, 'lang');
+
+    let langCodeToLang = {};
+    for (let translation of translations) {
+      for (let code of translation.codes.split(LANG_CODE_SEPARATOR)) {
+        langCodeToLang[code] = translation.lang;
+      }
+    }
+
+    let view = {
+      languages: translations.map((translation) => translation.lang),
+      json: {
+        langCodeToLang: JSON.stringify(langCodeToLang),
+        langCodes: JSON.stringify(_.values(langCodeToLang)),
+        translations:  JSON.stringify(allTranslationsMap)
+      }
+    };
+    resolve(new File([Mustache.render(themeHtml, view)], "index.html", { type: "text/html" }))
   });
 }
 
@@ -184,7 +186,7 @@ export function cssFilePromise() {
       reject(new Error(`Failed to compile sass. Status: ${result.status}`));
     });
   }).then((css) => {
-    return { "index.css": { Body: css, ContentType: "text/css" } };
+    return new File([css], "index.css", { type: "text/css" });
   });
 }
 
