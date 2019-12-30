@@ -35,7 +35,8 @@ class App extends Component {
     super(props);
 
     this.state = {
-      value: 'Processing',
+      isLoading: false,
+      status: '',
       navIndex: 0,
       translations: metadata.translations,
       images: [],
@@ -49,16 +50,21 @@ class App extends Component {
     });
 
     this.generateFiles().then((files) => {
-      this.setState({ value: "Uploading" });
+      this.setStatus("Uploading", true);
       return uploadFiles(files);
     }).then(() => {
-      this.setState({ value: "Success!" });
+      this.setStatus("Deployed!");
     }).catch((e) => {
-      this.setState({ value: `Failure Uploading: ${e}` });
+      this.setStatus(`Failure Deploying: ${e}`);
     });
   }
 
+  setStatus(status, isLoading) {
+    this.setState({ status: status, isLoading: !!isLoading });
+  }
+
   generateFiles() {
+    this.setStatus("Generating Files", true);
     for (let translation of this.state.translations) {
       translation.markdownHtml = marked(translation.markdown);
     }
@@ -91,6 +97,7 @@ class App extends Component {
 
   download = () => {
     return this.generateFiles().then((files) => {
+      this.setStatus("Generating Zip", true);
       let zip = new JSZip();
       Object.entries(files).forEach(([filename, props]) =>  {
         zip.file(filename, props.Body);
@@ -100,6 +107,8 @@ class App extends Component {
       }
 
       return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${ADMIN_TITLE}-${(new Date()).toISOString()}.zip`));
+    }).then(() => {
+      this.setStatus("");
     });
   };
 
@@ -134,6 +143,10 @@ class App extends Component {
                 <Navbar.Brand>{ADMIN_TITLE}</Navbar.Brand>
                 <Nav className="mr-auto">
                   {NAV_HEADERS.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
+                  <div className="d-flex ml-3">
+                    { this.state.isLoading && <div className="lds-facebook"><div></div><div></div><div></div></div>  }
+                    <div className="align-self-center">{this.state.status}</div>
+                  </div>
                 </Nav>
 
                 <ButtonToolbar>
@@ -144,7 +157,6 @@ class App extends Component {
               </Navbar>
               <Row>
                 <Col>
-                  {this.state.value}
                   <Uploader initialFiles={this.state.initialImages} onChange={this.handleImagesChange} validate={this.validateImage}/>
                 </Col>
               </Row>
