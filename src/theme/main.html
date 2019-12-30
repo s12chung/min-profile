@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title data-i18n="htmlTitle">{{currentTranslation.htmlTitle}}</title>
+    <title data-i18n="htmlTitle"></title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 
     <meta content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
@@ -30,8 +30,8 @@
     <!-- Banner -->
     <section id="banner">
         <div class="inner">
-            <h2 data-i18n="title">{{currentTranslation.title}}</h2>
-            <p data-i18n="subtitle">{{currentTranslation.subtitle}}</p>
+            <h2 data-i18n="title"></h2>
+            <p data-i18n="subtitle"></p>
         </div>
         <div class="more arrow-down-container">
             <a data-scroll href="#one" class="scrolly">
@@ -41,7 +41,7 @@
     </section>
 </div>
 <section id="one" class="layout">
-    <section class="content" data-i18n="markdownHtml">{{{currentTranslation.markdownHtml}}}</section>
+    <section class="content" data-i18n="markdownHtml"></section>
 </section>
 
 <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
@@ -73,10 +73,10 @@
         if (detectedLangCode === undefined) detectedLangCode = langCodes[0];
         detectedLangCode = simplifyLang(detectedLangCode);
 
-        function datai18n(field) { return "[data-i18n='" + field + "']"; }
+        function dataI18n(field) { return "[data-i18n='" + field + "']"; }
         function changeTranslation(langCode) {
             $.each(translations[langCodeToLang[langCode]], function(k, v) {
-                $(datai18n(k)).html(v);
+                $(dataI18n(k)).html(v);
             });
         }
 

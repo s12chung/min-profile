@@ -73,7 +73,6 @@ class App extends Component {
 
     let view = {
       languages: this.state.translations.map((translation) => translation.lang),
-      currentTranslation: allTranslationsMap[this.state.translations[0]],
       json: {
         langCodeToLang: JSON.stringify(langCodeToLang),
         langCodes: JSON.stringify(_.values(langCodeToLang)),
@@ -100,7 +99,7 @@ class App extends Component {
         zip.file(`images/${file.name}`, file.arrayBuffer());
       }
 
-      return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `admin-${(new Date()).toISOString()}.zip`));
+      return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${ADMIN_TITLE}-${(new Date()).toISOString()}.zip`));
     });
   };
 
