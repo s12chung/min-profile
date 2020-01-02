@@ -1,12 +1,14 @@
 import React, {Component} from 'react';
 import {Container} from 'react-bootstrap';
 import update from 'immutability-helper';
+import _ from 'lodash';
 
 import metadata from './metadata.json';
 
 import {getImageFiles, generateFiles, generateZip, reconcileWebsite} from "./content/content";
 
 import {throttledLog} from "./lib/log";
+
 import MainNav from './components/MainNav';
 import Content from './components/Content';
 
@@ -24,6 +26,7 @@ class App extends Component {
     super(props);
 
     this.state = {
+      isValidDevice: isValidDevice(),
       nav: {
         selectedIndex: 0,
       },
@@ -37,6 +40,8 @@ class App extends Component {
         translations: metadata.translations,
       },
     };
+
+    window.addEventListener("resize", _.throttle(() => this.setState({ isValidDevice: isValidDevice() })), 1000);
 
     getImageFiles().then((files) => {
       this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
@@ -73,13 +78,24 @@ class App extends Component {
   };
 
   render () {
+    let containerDisplay = this.state.isValidDevice ? "" : "none";
     return (
-        <Container>
+        <div>
+          { this.state.isValidDevice ? undefined : "Please use a computer to access this website" }
+          <Container style={{display: containerDisplay}}>
             <MainNav title={ADMIN_TITLE} generateFiles={this.generateFiles} generateZip={this.generateZip} reconcileWebsite={this.reconcileWebsite}/>
             <Content object={this.state.content} onImagesChange={this.handleImagesChange} onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
-        </Container>
+          </Container>
+        </div>
     )
   }
 }
 
 export default App;
+
+require('matchmedia-polyfill');
+require('matchmedia-polyfill/matchMedia.addListener');
+
+function isValidDevice() {
+  return matchMedia('screen and (min-width: 768px)').matches;
+}
