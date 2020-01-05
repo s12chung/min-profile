@@ -2,19 +2,12 @@ import _ from "lodash";
 import awsConfig from "../aws";
 import { s3 } from "./cognito";
 
-function baseS3Params() {
-    return _.pick(awsConfig, ['Bucket']);
-}
+export const WEBSITE_BUCKET_NAME = "website";
+export const BACKUP_BUCKET_NAME = "backup";
 
-function prefixRequest(prefix) {
-    let request = { Prefix: prefix };
-    if (_.isBlank(prefix)) request = { Delimiter: "/" };
-    return request;
-}
-
-export function reconcileFiles(files, prefix) {
+export function reconcileFiles(bucketName, files, prefix) {
     if (_.isBlank(prefix)) prefix = '';
-    return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params())).promise()
+    return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then(( data) => {
             return data.Contents.reduce((map, object) => {
                 if (object.Size === 0) return map; // is directory
@@ -28,7 +21,7 @@ export function reconcileFiles(files, prefix) {
                 let key = prefix + file.name;
                 if (!keyToLastModified[key] || file.lastModified !== keyToLastModified[key].getTime()) {
                     console.log(`Uploading object: ${key}`, file);
-                    promises.push(uploadFile(key, file));
+                    promises.push(uploadFile(bucketName, key, file));
                 } else {
                     console.log(`Skipped uploading object: ${key}`, file);
                 }
@@ -45,23 +38,33 @@ export function reconcileFiles(files, prefix) {
         });
 }
 
-function uploadFile(key, file) {
-    return s3.upload(Object.assign({ Key: key }, baseS3Params(), { Body: file,  ContentType: file.type })).promise();
+function uploadFile(bucketName, key, file) {
+    return s3.upload(Object.assign({ Key: key }, baseS3Params(bucketName), { Body: file,  ContentType: file.type })).promise();
 }
 
-export function getFiles(prefix) {
-    return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params())).promise()
+export function getFiles(bucketName, prefix) {
+    return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then((response) => {
             return Promise.all( _.without(response.Contents.map((object) =>{
                 if (object.Size === 0) return undefined; // is directory
-                return getFile(object.Key)
+                return getFile(bucketName, object.Key)
             }), undefined))
         });
 }
 
-function getFile(key) {
-    return s3.getObject(Object.assign({Key: key}, baseS3Params())).promise()
+function getFile(bucketName, key) {
+    return s3.getObject(Object.assign({Key: key}, baseS3Params(bucketName))).promise()
         .then((data) => {
             return new File([data.Body], key.split('/').pop(), { type: data.ContentType, lastModified: data.LastModified.getTime() })
         });
+}
+
+function baseS3Params(bucketName) {
+    return { Bucket: awsConfig.buckets[bucketName] };
+}
+
+function prefixRequest(prefix) {
+    let request = { Prefix: prefix };
+    if (_.isBlank(prefix)) request = { Delimiter: "/" };
+    return request;
 }

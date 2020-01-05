@@ -5,7 +5,7 @@ import _ from 'lodash';
 
 import metadata from './metadata.json';
 
-import {getImageFiles, generateFiles, generateZip, reconcileWebsite} from "./content/content";
+import {getImageFiles, download, save, deploy} from "./content/content";
 
 import {throttledLog} from "./lib/log";
 import {setCredentials} from "./lib/cognito";
@@ -68,9 +68,9 @@ class App extends Component {
     });
   }
 
-  generateFiles = () => generateFiles(this.state.content);
-  generateZip = (files) => generateZip(ADMIN_TITLE, files, this.state.content.images);
-  reconcileWebsite = (files) => reconcileWebsite(files, this.state.content.images);
+  save = (setStatus) => save(this.state.content, setStatus);
+  download = (setStatus) => download(ADMIN_TITLE, this.state.content, setStatus);
+  deploy = (setStatus) => deploy(this.state.content, setStatus);
 
   handleImagesChange = (operation, file) => {
     this.setState(update(this.state, { content: { images: this.operationToImageSpec(operation, file) } }));
@@ -101,7 +101,7 @@ class App extends Component {
         <div>
           { this.state.isValidDevice ? undefined : "Please use a computer to access this website" }
           <Container style={{display: containerDisplay}}>
-            <MainNav title={ADMIN_TITLE} generateFiles={this.generateFiles} generateZip={this.generateZip} reconcileWebsite={this.reconcileWebsite}/>
+            <MainNav title={ADMIN_TITLE} download={this.download} save={this.save} deploy={this.deploy}/>
             <Content object={this.state.content} onImagesChange={this.handleImagesChange} onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
           </Container>
         </div>

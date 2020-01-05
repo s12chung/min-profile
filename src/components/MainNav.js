@@ -13,30 +13,8 @@ class MainNav extends Component {
         };
     }
 
-    setStatus(status, isLoading) {
+    setStatus = (status, isLoading) => {
         this.setState(update(this.state, { $merge: { status: status, isLoading: !!isLoading }}));
-    }
-    
-    download = () => {
-        return this.props.generateFiles().then((...args) => {
-            this.setStatus("Generating Zip", true);
-            return this.props.generateZip(...args);
-        }).then(() => {
-            this.setStatus("");
-        });
-    };
-
-    deploy = () => {
-        this.setStatus("Generating Files", true);
-        return this.props.generateFiles().then((...args) => {
-            this.setStatus("Uploading", true);
-            return this.props.reconcileWebsite(...args);
-        }).then(() => {
-            this.setStatus("Deployed!");
-        }).catch((e) => {
-            console.log("Failure Deploying", e);
-            this.setStatus(`Failure Deploying: ${e}`);
-        });
     };
 
     render() {
@@ -52,9 +30,9 @@ class MainNav extends Component {
                 </Nav>
 
                 <ButtonToolbar>
-                    <Button className="m-1" variant="outline-secondary" onClick={this.download}>Download</Button>
-                    <Button className="m-1" variant="outline-primary">Save</Button>
-                    <Button className="m-1" onClick={this.deploy}>Deploy</Button>
+                    <Button className="m-1" variant="outline-secondary" onClick={() => this.props.download(this.setStatus)}>Download</Button>
+                    <Button className="m-1" variant="outline-primary" onClick={() => this.props.save(this.setStatus)}>Save</Button>
+                    <Button className="m-1" onClick={() => this.props.deploy(this.setStatus)}>Deploy</Button>
                 </ButtonToolbar>
             </Navbar>
         )
