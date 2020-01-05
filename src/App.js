@@ -8,6 +8,7 @@ import metadata from './metadata.json';
 import {getImageFiles, generateFiles, generateZip, reconcileWebsite} from "./content/content";
 
 import {throttledLog} from "./lib/log";
+import {setCredentials} from "./lib/cognito";
 
 import MainNav from './components/MainNav';
 import Content from './components/Content';
@@ -41,13 +42,27 @@ class App extends Component {
       },
     };
 
-    window.addEventListener("resize", _.throttle(() => this.setState({ isValidDevice: isValidDevice() })), 1000);
+    window.addEventListener("resize", _.throttle(() => {
+      this.setState({ isValidDevice: isValidDevice() }, () => {
+        this.setup();
+      });
+    }), 1000);
+    this.setup();
+  }
 
-    getImageFiles().then((files) => {
-      this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
-    }).catch((e) => {
-      console.log("Failure getting images", e);
-    });
+  setup() {
+    if (!this.state.isValidDevice) return;
+
+    return setCredentials()
+        .then(() => {
+          return getImageFiles().then((files) => {
+            this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
+          }).catch((e) => {
+            console.log("Failure getting images", e);
+          });
+        })
+        // do nothing and redirect
+        .catch(() => {});
   }
 
   generateFiles = () => generateFiles(this.state.content);

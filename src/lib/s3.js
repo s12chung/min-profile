@@ -1,9 +1,6 @@
 import _ from "lodash";
 import awsConfig from "../aws";
-import AWS from "aws-sdk";
-
-AWS.config.update(_.pick(awsConfig, ['accessKeyId', 'secretAccessKey', 'region']));
-let s3 = new AWS.S3();
+import { s3 } from "./cognito";
 
 function baseS3Params() {
     return _.pick(awsConfig, ['Bucket']);

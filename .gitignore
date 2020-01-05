@@ -26,3 +26,4 @@ yarn-error.log*
 
 src/aws.json
 src/metadata.json
+src/cognito.json
