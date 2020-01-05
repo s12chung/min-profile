@@ -19,7 +19,7 @@ class Translation extends Component {
 
     promptLang = ()=> {
         let lang = this.props.promptLang();
-        if (_.isUndefined(lang)) return;
+        if (_.isBlank(lang)) return;
         this.handleChange({ 'lang': lang });
     };
 

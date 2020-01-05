@@ -8,12 +8,12 @@ function baseS3Params() {
 
 function prefixRequest(prefix) {
     let request = { Prefix: prefix };
-    if (_.isUndefined(prefix) || _.isEmpty(prefix)) request = { Delimiter: "/" };
+    if (_.isBlank(prefix)) request = { Delimiter: "/" };
     return request;
 }
 
 export function reconcileFiles(files, prefix) {
-    if (_.isUndefined(prefix)) prefix = '';
+    if (_.isBlank(prefix)) prefix = '';
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params())).promise()
         .then(( data) => {
             return data.Contents.reduce((map, object) => {

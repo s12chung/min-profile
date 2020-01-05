@@ -16,10 +16,16 @@ export function setCredentials() {
         window.localStorage.setItem(ID_TOKEN_KEY, data.id_token);
         window.localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
         window.localStorage.setItem(TOKEN_EXPIRES_KEY, ((new Date()).getTime() + parseInt(data.expires_in) * 1000).toString());
+
+        // redirect to clean url
         window.location.replace(window.location.protocol+'//'+window.location.host+window.location.pathname);
         return Promise.reject();
     }
-    if (!configureS3(window.localStorage.getItem(ID_TOKEN_KEY))) return authenticate();
+
+    let token = getCurrentToken();
+    if (_.isBlank(token)) return authenticate();
+    configureS3(token);
+
     return Promise.resolve();
 }
 
@@ -28,11 +34,18 @@ function authenticate() {
     return Promise.reject("Not Authenticated, Redirecting.");
 }
 
-function configureS3(token) {
-    if(!_.isString(token) ||_.isEmpty(token)) {
-        return false;
-    }
+function getCurrentToken() {
+    let expires = window.localStorage.getItem(TOKEN_EXPIRES_KEY);
+    expires = _.parseInt(expires);
+    // expires is 60 mins, if 5 mins has elapsed, get creds
+    if (_.isNaN(expires) || (expires - 55 * 60 * 1000) < (new Date().getTime())) return;
 
+    let token = window.localStorage.getItem(ID_TOKEN_KEY);
+    if (_.isBlank(token)) return;
+    return token;
+}
+
+function configureS3(token) {
     AWS.config.region = aws.region;
     AWS.config.credentials = new AWS.CognitoIdentityCredentials({
         IdentityPoolId: aws.IdentityPoolId,
@@ -41,7 +54,6 @@ function configureS3(token) {
         }
     });
     s3 = new AWS.S3();
-    return true
 }
 
 export let s3;

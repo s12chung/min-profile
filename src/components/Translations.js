@@ -25,7 +25,7 @@ class Translations extends Component {
         let callback = () => this.setState({ selectedTranslationIndex: this.indexOfLang(lang) });
         if (lang === PLUS_LANG) {
             lang = this.promptLang();
-            if (_.isUndefined(lang)) return;
+            if (_.isBlank(lang)) return;
             this.props.onChange(this.props.translations.length, update(this.props.translations,{ $push: [newTranslation(lang)]}), callback);
             return;
         }
@@ -36,14 +36,14 @@ class Translations extends Component {
         lang = window.prompt("Please enter a lang", lang);
 
         let errorMessage;
-        if (_.isUndefined(lang) || _.isEmpty(lang)) errorMessage = 'lang is empty. Aborting';
+        if (_.isBlank(lang)) errorMessage = 'lang is empty. Aborting';
         for (let translation of this.props.translations) {
             if (translation.lang === lang) {
                 errorMessage = `lang (${lang}) already exists. Aborting`;
                 break;
             }
         }
-        if (!_.isUndefined(errorMessage)) {
+        if (!_.isBlank(errorMessage)) {
             window.alert(errorMessage);
             return;
         }
@@ -65,7 +65,7 @@ class Translations extends Component {
         if (_.isNaN(to)) errorMessage = 'index is invalid. Aborting';
         if (to < 0) errorMessage = 'index < 0. Aborting';
         if (to > maxTo) errorMessage = `index > ${maxTo}. Aborting`;
-        if (!_.isUndefined(errorMessage)) {
+        if (!_.isBlank(errorMessage)) {
             window.alert(errorMessage);
             return;
         }
@@ -121,7 +121,7 @@ class Translations extends Component {
                         {sideTranslations.map((t) => <Nav.Item key={t.lang}><Nav.Link eventKey={t.lang}>{t.lang}</Nav.Link></Nav.Item>)}
                         <Nav.Item key={PLUS_LANG}><Nav.Link eventKey={PLUS_LANG}>{PLUS_LANG}</Nav.Link></Nav.Item>
                     </Nav>
-                    {!_.isUndefined(selectedTranslation) && (
+                    {!_.isBlank(selectedTranslation) && (
                         <Translation object={selectedTranslation} onChange={(c) => this.handleTranslationChange(selectedTranslationIndex, c)} onTranslationReorder={this.handleTranslationReorder} onTranslationDelete={this.handleTranslationDelete}/>
                     )}
                 </Col>
