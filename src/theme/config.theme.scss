@@ -1,5 +1,3 @@
-@import url("https://use.typekit.net/azi2vbx.css");
-
 $ink: rgba(36,30,32,0.9);
 $ink_light: rgba(36,30,32,0.7);
 $light_grey: rgba(36,30,32,0.3);
@@ -8,6 +6,9 @@ $paper: white;
 $blue: #5093A3;
 
 $transition_speed: 400ms ease 0s;
+
+@import url("https://use.typekit.net/azi2vbx.css");
+@import url('https://fonts.googleapis.com/css?family=Nanum+Gothic|Nanum+Gothic+Coding|Stylish&display=swap');
 
 $serif: "ff-tisa-web-pro", Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "DejaVu Serif", "Bitstream Vera Serif", "Liberation Serif", Georgia, serif;
 @mixin serif {
@@ -26,9 +27,34 @@ $sans-serif: "proxima-nova", "HelveticaNeue-Light", "Helvetica Neue Light", "Hel
   font-weight: 600;
 }
 
+$ko-serif: 'Stylish', sans-serif;
+@mixin ko-serif {
+  font-family: $ko-serif;
+  font-weight: 400;
+}
+
+$ko-sans-serif: 'Nanum Gothic', sans-serif;
+@mixin ko-sans-serif {
+  font-family: $ko-sans-serif;
+  font-weight: 400;
+}
+
+$ko-sans-serif-bold: 'Nanum Gothic', sans-serif;
+@mixin ko-sans-serif-bold {
+  font-family: $ko-sans-serif-bold;
+  font-weight: 700;
+}
+
+$ko-monospace: 'Nanum Gothic Coding', "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+@mixin ko-monospace {
+  font-family: $ko-monospace;
+  font-weight: 400;
+}
+
 $monospace: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
 @mixin monospace {
   font-family: $monospace;
+  font-weight: 400;
 }
 
 $base-font-size: 24px;
@@ -36,12 +62,66 @@ $small: 0.7rem;
 $tiny: 0.5rem;
 
 html {
-  @include serif;
   line-height: 1.5;
   font-size: $base-font-size;
 
   color: $ink;
   background-color: $paper;
+}
+
+html {
+  @include serif;
+
+  b,
+  strong {
+    @include serif-bold;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @include sans-serif-semi-bold;
+  }
+
+  code {
+    @include monospace;
+  }
+}
+
+html[lang="ko"] {
+  @include ko-sans-serif;
+
+  b,
+  strong {
+    @include ko-sans-serif-bold;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @include ko-serif;
+  }
+
+  code {
+    @include ko-monospace;
+  }
+
+  #page-wrapper {
+    .inner {
+      font-size: 1.5em;
+
+      h2 {
+        @include ko-serif;
+        font-size: 3em;
+      }
+    }
+  }
 }
 
 @media all and (max-width: 575px) {
@@ -53,11 +133,6 @@ html {
 i,
 em {
   font-style: italic;
-}
-
-b,
-strong {
-  @include serif-bold;
 }
 
 p {
@@ -103,15 +178,6 @@ a {
   }
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  @include sans-serif-semi-bold;
-}
-
 h1 {
   font-size: 3em;
   line-height: 1.1;
@@ -148,7 +214,6 @@ pre {
 
 code {
   background-color: $background_grey;
-  @include monospace;
 }
 
 blockquote {

@@ -89,6 +89,7 @@
             $.each(translations[langCodeToLang[langCode]], function(k, v) {
                 $(dataI18n(k)).html(v);
             });
+            $('html').attr('lang', langCode);
         }
 
         changeTranslation(detectedLangCode);
