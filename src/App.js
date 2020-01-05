@@ -19,14 +19,11 @@ const tLog = throttledLog();
 export const PromptContext = React.createContext({});
 
 class App extends Component {
-  componentDidMount() {
-    document.title = ADMIN_TITLE;
-  }
-
   constructor(props) {
     super(props);
 
     this.state = {
+      initialized: false,
       isValidDevice: isValidDevice(),
       nav: {
         selectedIndex: 0,
@@ -41,28 +38,34 @@ class App extends Component {
         translations: metadata.translations,
       },
     };
-
-    window.addEventListener("resize", _.throttle(() => {
-      this.setState({ isValidDevice: isValidDevice() }, () => {
-        this.setup();
-      });
-    }), 1000);
-    this.setup();
   }
 
-  setup() {
-    if (!this.state.isValidDevice) return;
+  componentDidMount() {
+    document.title = ADMIN_TITLE;
+    window.addEventListener("resize", _.throttle(() => {
+      this.setState({ isValidDevice: isValidDevice() }, () => {
+        this.initialize();
+      });
+    }), 1000);
+    this.initialize();
+  }
 
-    return setCredentials()
-        .then(() => {
-          return getImageFiles().then((files) => {
-            this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
-          }).catch((e) => {
-            console.log("Failure getting images", e);
-          });
-        })
-        // do nothing and redirect
-        .catch(() => {});
+  initialize() {
+    if (!this.state.isValidDevice) return;
+    if (this.state.initialized) return;
+
+    this.setState({ initialized: true }, () => {
+      setCredentials()
+          .then(() => {
+            return getImageFiles().then((files) => {
+              this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
+            }).catch((e) => {
+              console.log("Failure getting images", e);
+            });
+          })
+          // do nothing and redirect
+          .catch(() => {});
+    });
   }
 
   generateFiles = () => generateFiles(this.state.content);
