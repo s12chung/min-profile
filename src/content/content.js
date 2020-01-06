@@ -1,3 +1,10 @@
+import _ from "lodash";
+import marked from "marked";
+import JSZip from "jszip";
+import {saveAs} from "file-saver";
+
+import path from 'path';
+
 import {htmlFilePromise} from "../lib/mustache";
 import {cssFilePromise} from "../lib/sass";
 import {WEBSITE_BUCKET_NAME, BACKUP_BUCKET_NAME, getFiles, reconcileFiles} from "../lib/s3";
@@ -7,18 +14,45 @@ import themeHtml from "../theme/main.html";
 import configScss from "../theme/config.theme.scss";
 import layoutScss from "../theme/layout.theme.scss";
 import landingScss from "../theme/landing.theme.scss";
-import _ from "lodash";
-import marked from "marked";
-import JSZip from "jszip";
-import {saveAs} from "file-saver";
 
 const MAIN_BACKUP_PREFIX = "current/";
 const IMAGE_S3_PREFIX = 'images/';
 const SCSS_FILES = [configScss, layoutScss, landingScss];
 const LANG_CODE_SEPARATOR = ',';
 
-export function getImageFiles() {
-    return getFiles(WEBSITE_BUCKET_NAME, IMAGE_S3_PREFIX);
+const CONTENT_FILE_NAME = "content.json";
+const MARKDOWN_FILE_EXTENSION = ".md";
+
+export function getContent() {
+    return Promise.all([
+        getFiles(BACKUP_BUCKET_NAME, MAIN_BACKUP_PREFIX),
+        getFiles(BACKUP_BUCKET_NAME, MAIN_BACKUP_PREFIX + IMAGE_S3_PREFIX),
+    ]).then(([files, images]) => {
+        let contentPromise;
+        let markdownPromises = [];
+        for (let file of files) {
+            if (file.name === CONTENT_FILE_NAME) {
+                contentPromise = readFileAsText(file).then((s) => window.JSON.parse(s))
+            } else {
+                markdownPromises.push(readFileAsText(file).then((s) => ({ lang: path.basename(file.name, MARKDOWN_FILE_EXTENSION), markdown: s })))
+            }
+        }
+
+        return contentPromise.then((content) => {
+            return Promise.all(markdownPromises).then((markdowns) => {
+                for (let translation of content.translations) {
+                    let markdown = _.find(markdowns, { lang: translation.lang });
+                    if (_.isBlank(markdown)) throw new Error(`markdown not found for translation: ${translation.lang}`);
+                    translation.markdown = markdown.markdown;
+                }
+                return content;
+            });
+        }).then((content) => {
+            content.initialImages = images;
+            content.images = [];
+            return content;
+        });
+    });
 }
 
 export function download(title, content, setStatus) {
@@ -65,15 +99,24 @@ function generateBackupFiles(content) {
         delete translation.markdown;
     }
 
-    let files = [new File([window.JSON.stringify(content, null, 2)], "content.json", { type: "application/json" })];
+    let files = [new File([window.JSON.stringify(content, null, 2)], CONTENT_FILE_NAME, { type: "application/json" })];
     for (let markdown of markdowns) {
-        files.push(new File([markdown.markdown], `${markdown.lang}_markdown.md`, { type: "text/markdown" }))
+        files.push(new File([markdown.markdown], `${markdown.lang}${MARKDOWN_FILE_EXTENSION}`, { type: "text/markdown" }))
     }
     return Promise.resolve(files);
 }
 
 function textContent(content) {
     return _.cloneDeep(_.omit(content, ["images", "initialImages"]));
+}
+
+function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsText(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = e => reject(e);
+    });
 }
 
 function generateDeployFiles(content) {
@@ -95,12 +138,12 @@ function generateZip(title, files, images) {
     return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${title}-${(new Date()).toISOString()}.zip`));
 }
 
-function reconcileDeploy(files, images) {
-    return Promise.all([reconcileFiles(WEBSITE_BUCKET_NAME, files), reconcileFiles(WEBSITE_BUCKET_NAME, images, IMAGE_S3_PREFIX)])
-}
-
 function reconcileSave(files, images) {
     return Promise.all([reconcileFiles(BACKUP_BUCKET_NAME, files, MAIN_BACKUP_PREFIX), reconcileFiles(BACKUP_BUCKET_NAME, images, MAIN_BACKUP_PREFIX + IMAGE_S3_PREFIX)])
+}
+
+function reconcileDeploy(files, images) {
+    return Promise.all([reconcileFiles(WEBSITE_BUCKET_NAME, files), reconcileFiles(WEBSITE_BUCKET_NAME, images, IMAGE_S3_PREFIX)])
 }
 
 function mustacheVars(content) {

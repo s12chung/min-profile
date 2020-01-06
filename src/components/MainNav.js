@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import {Button, ButtonToolbar, Navbar, Nav} from "react-bootstrap";
 import update from "immutability-helper";
 
+import BarLoader from "./BarLoader";
+
 const HEADERS = ["Content"];
 
 class MainNav extends Component {
@@ -24,7 +26,7 @@ class MainNav extends Component {
                 <Nav className="mr-auto">
                     {HEADERS.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
                     <div className="d-flex ml-3">
-                        { this.state.isLoading && <div className="lds-facebook"><div></div><div></div><div></div></div>  }
+                        { this.state.isLoading && <BarLoader/>}
                         <div className="align-self-center">{this.state.status}</div>
                     </div>
                 </Nav>

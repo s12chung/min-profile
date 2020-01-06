@@ -3,14 +3,13 @@ import {Container} from 'react-bootstrap';
 import update from 'immutability-helper';
 import _ from 'lodash';
 
-import metadata from './metadata.json';
-
-import {getImageFiles, download, save, deploy} from "./content/content";
+import {getContent, download, save, deploy} from "./content/content";
 
 import {throttledLog} from "./lib/log";
 import {setCredentials} from "./lib/cognito";
 
 import MainNav from './components/MainNav';
+import BarLoader from "./components/BarLoader";
 import Content from './components/Content';
 
 const ADMIN_TITLE = window.location.hostname;
@@ -24,6 +23,7 @@ class App extends Component {
 
     this.state = {
       initialized: false,
+      initializedSuccess: false,
       isValidDevice: isValidDevice(),
       nav: {
         selectedIndex: 0,
@@ -33,9 +33,9 @@ class App extends Component {
         images: [],
         initialImages: undefined,
         shared: {
-          backgroundImage: metadata.backgroundImage,
+          backgroundImage: undefined,
         },
-        translations: metadata.translations,
+        translations: [],
       },
     };
   }
@@ -57,8 +57,8 @@ class App extends Component {
     this.setState({ initialized: true }, () => {
       setCredentials()
           .then(() => {
-            return getImageFiles().then((files) => {
-              this.setState(update(this.state, { content: { $merge: { initialImages: files } } }));
+            return getContent().then((content) => {
+              this.setState({ initializedSuccess: true, content: content });
             }).catch((e) => {
               console.log("Failure getting images", e);
             });
@@ -100,10 +100,13 @@ class App extends Component {
     return (
         <div>
           { this.state.isValidDevice ? undefined : "Please use a computer to access this website" }
-          <Container style={{display: containerDisplay}}>
-            <MainNav title={ADMIN_TITLE} download={this.download} save={this.save} deploy={this.deploy}/>
-            <Content object={this.state.content} onImagesChange={this.handleImagesChange} onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
-          </Container>
+          { !this.state.initializedSuccess ? <BarLoader/> :
+              <Container style={{display: containerDisplay}}>
+                <MainNav title={ADMIN_TITLE} download={this.download} save={this.save} deploy={this.deploy}/>
+                <Content object={this.state.content} onImagesChange={this.handleImagesChange}
+                         onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
+              </Container>
+          }
         </div>
     )
   }

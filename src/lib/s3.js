@@ -64,7 +64,5 @@ function baseS3Params(bucketName) {
 }
 
 function prefixRequest(prefix) {
-    let request = { Prefix: prefix };
-    if (_.isBlank(prefix)) request = { Delimiter: "/" };
-    return request;
+    return { Prefix: prefix, Delimiter: "/" };
 }
