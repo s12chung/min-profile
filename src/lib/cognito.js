@@ -30,7 +30,9 @@ export function setCredentials() {
 }
 
 function authenticate() {
-    window.location.replace(`https://${cognito.domain}/login?${queryString.stringify(_.mapKeys(cognito.oauth, (v, k) => _.snakeCase(k)))}`);
+    let query = _.cloneDeep(cognito.oauth);
+    query.redirectUri = window.location.protocol+'//'+window.location.host+window.location.pathname;
+    window.location.replace(`https://${cognito.domain}/login?${queryString.stringify(_.mapKeys(query, (v, k) => _.snakeCase(k)))}`);
     return Promise.reject("Not Authenticated, Redirecting.");
 }
 
