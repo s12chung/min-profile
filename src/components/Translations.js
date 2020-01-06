@@ -101,7 +101,6 @@ class Translations extends Component {
         this.props.onChange(from, update(this.props.translations, { $splice: [[from, 1],] }));
     };
 
-
     render() {
         let mainTranslation = this.props.translations[0];
         let selectedTranslationIndex = this.state.selectedTranslationIndex;

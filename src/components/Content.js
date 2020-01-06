@@ -15,7 +15,7 @@ class Content extends Component {
 
     render() {
         return (
-            <div>
+            <div style={this.props.style}>
                 <Row>
                     <Col md={8}>
                         <Uploader initialFiles={this.props.object.initialImages} onChange={this.props.onImagesChange} validate={this.validateImage}/>

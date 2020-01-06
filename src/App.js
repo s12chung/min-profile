@@ -11,8 +11,15 @@ import {setCredentials} from "./lib/cognito";
 import MainNav from './components/MainNav';
 import BarLoader from "./components/BarLoader";
 import Content from './components/Content';
+import Theme from './components/Theme';
+
+import themeHtml from "./theme/main.html";
+import configScss from "./theme/config.theme.scss";
+import layoutScss from "./theme/layout.theme.scss";
+import landingScss from "./theme/landing.theme.scss";
 
 const ADMIN_TITLE = window.location.hostname;
+const NAV_HEADERS = ["Content", "Theme"];
 const tLog = throttledLog();
 
 export const PromptContext = React.createContext({});
@@ -37,6 +44,15 @@ class App extends Component {
         },
         translations: [],
       },
+
+      theme: {
+        files: [
+            { name: "main.html", content: themeHtml},
+            { name: "config.scss", content: configScss},
+            { name: "layout.scss", content: layoutScss},
+            { name: "landing.scss", content: landingScss},
+        ],
+      }
     };
   }
 
@@ -68,9 +84,13 @@ class App extends Component {
     });
   }
 
-  save = (setStatus) => save(this.state.content, setStatus);
-  download = (setStatus) => download(ADMIN_TITLE, this.state.content, setStatus);
-  deploy = (setStatus) => deploy(this.state.content, setStatus);
+  download = (setStatus) => download(ADMIN_TITLE, this.state.content, this.state.theme, setStatus);
+  save = (setStatus) => save(this.state.content, this.state.theme, setStatus);
+  deploy = (setStatus) => deploy(this.state.content, this.state.theme, setStatus);
+
+  onHeaderSelect = (navHeader) => {
+    this.setState(update(this.state, { nav: { $merge: {  selectedIndex: _.indexOf(NAV_HEADERS, navHeader) } } }));
+  };
 
   handleImagesChange = (operation, file) => {
     this.setState(update(this.state, { content: { images: this.operationToImageSpec(operation, file) } }));
@@ -95,16 +115,27 @@ class App extends Component {
     this.setState(update(this.state, { content: { $merge: { shared: state } }}));
   };
 
+  handleThemeFileChange = (index, themeUpdate, callback) => {
+    this.setState(update(this.state, { theme: { $merge: themeUpdate } }), () => {
+      tLog(this.state.theme.files[index]);
+      if (callback) callback();
+    });
+  };
+
   render () {
     let containerDisplay = this.state.isValidDevice ? "" : "none";
+    let contentDisplay = this.state.nav.selectedIndex === 0 ? "" : "none";
+    let themeDisplay = this.state.nav.selectedIndex === 1 ? "" : "none";
+
     return (
         <div>
           { this.state.isValidDevice ? undefined : "Please use a computer to access this website" }
           { !this.state.initializedSuccess ? <BarLoader/> :
               <Container style={{display: containerDisplay}}>
-                <MainNav title={ADMIN_TITLE} download={this.download} save={this.save} deploy={this.deploy}/>
-                <Content object={this.state.content} onImagesChange={this.handleImagesChange}
+                <MainNav title={ADMIN_TITLE} headers={NAV_HEADERS} onSelect={this.onHeaderSelect} download={this.download} save={this.save} deploy={this.deploy}/>
+                <Content style={{display: contentDisplay}} object={this.state.content} onImagesChange={this.handleImagesChange}
                          onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
+                <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange}/>
               </Container>
           }
         </div>
