@@ -196,6 +196,6 @@ function htmlFilePromise(themeHtmls, vars) {
 
 function cssFilePromise(sassFiles) {
     return renderCssPromise(sassFiles).then((css) => {
-        return new File([css], INDEX_CSS_FILE_NAME, { type: path.extname(INDEX_CSS_FILE_NAME) });
+        return new File([css], INDEX_CSS_FILE_NAME, { type: EXT_TO_CONTENT_TYPE[path.extname(INDEX_CSS_FILE_NAME)] });
     });
 }
