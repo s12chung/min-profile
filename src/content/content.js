@@ -5,6 +5,7 @@ import {saveAs} from "file-saver";
 
 import path from 'path';
 
+import { readFileAsText } from "../lib/file";
 import {renderHTML} from "../lib/mustache";
 import {renderCssPromise} from "../lib/sass";
 import {WEBSITE_BUCKET_NAME, BACKUP_BUCKET_NAME, getFiles, reconcileFiles} from "../lib/s3";
@@ -123,15 +124,6 @@ function textContent(content) {
     return _.cloneDeep(_.omit(content, ["images", "initialImages"]));
 }
 
-function readFileAsText(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsText(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = e => reject(e);
-    });
-}
-
 function generateDeployFiles(content, theme) {
     return Promise.all([
         htmlFilePromise(_.filter(theme.files, (file) => file.name.endsWith(HTML_FILE_EXTENSION)), mustacheVars(content)),
@@ -152,15 +144,24 @@ function generateZip(title, files, images) {
 }
 
 function reconcileSave(contentFiles, themeFiles, images) {
+    console.log("Starting save");
     return Promise.all([
         reconcileFiles(BACKUP_BUCKET_NAME, contentFiles, MAIN_BACKUP_PREFIX),
         reconcileFiles(BACKUP_BUCKET_NAME, images, MAIN_BACKUP_PREFIX + IMAGE_S3_PREFIX),
         reconcileFiles(BACKUP_BUCKET_NAME, themeFiles, MAIN_BACKUP_PREFIX + THEME_S3_PREFIX),
-    ])
+    ]).then(() => {
+        console.log("");
+    });
 }
 
 function reconcileDeploy(files, images) {
-    return Promise.all([reconcileFiles(WEBSITE_BUCKET_NAME, files), reconcileFiles(WEBSITE_BUCKET_NAME, images, IMAGE_S3_PREFIX)])
+    console.log("Starting deploy");
+    return Promise.all([
+        reconcileFiles(WEBSITE_BUCKET_NAME, files),
+        reconcileFiles(WEBSITE_BUCKET_NAME, images, IMAGE_S3_PREFIX),
+    ]).then(() => {
+        console.log("");
+    });
 }
 
 function mustacheVars(content) {

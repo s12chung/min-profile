@@ -40,6 +40,7 @@
     "jest-environment-jsdom-fourteen": "0.1.0",
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.2",
+    "js-md5": "^0.7.3",
     "jszip": "^3.2.2",
     "lodash": "^4.17.15",
     "marked": "^0.8.0",

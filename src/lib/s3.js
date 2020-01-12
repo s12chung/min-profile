@@ -2,6 +2,10 @@ import _ from "lodash";
 import awsConfig from "../aws";
 import { s3 } from "./cognito";
 
+import { readFileAsArrayBuffer } from "./file";
+
+import md5 from 'js-md5'
+
 export const WEBSITE_BUCKET_NAME = "website";
 export const BACKUP_BUCKET_NAME = "backup";
 
@@ -10,30 +14,38 @@ export function reconcileFiles(bucketName, files, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then(( data) => {
             return data.Contents.reduce((map, object) => {
-                return Object.assign(map, { [object.Key]: object.LastModified })
+                return Object.assign(map, { [object.Key]: object.ETag })
             }, {});
         })
-        .then((keyToLastModified) => {
-            let promises = [];
+        .then((keyToMd5) => {
+            return Promise.all(files.map((file) => readFileAsArrayBuffer(file))).then((arrayBuffers)=>{
+                let promises = [];
 
-            for (let file of files) {
-                let key = prefix + file.name;
-                if (!keyToLastModified[key] || file.lastModified !== keyToLastModified[key].getTime()) {
-                    console.log(`Uploading object: ${key}`, file);
-                    promises.push(uploadFile(bucketName, key, file));
-                } else {
-                    console.log(`Skipped uploading object: ${key}`, file);
+                let i = 0;
+                for (let file of files) {
+                    let key = prefix + file.name;
+                    if (!keyToMd5[key] || `"${md5(arrayBuffers[i])}"` !== keyToMd5[key]) {
+                        console.log(`Uploading object: ${key}`, file);
+                        promises.push(uploadFile(bucketName, key, file));
+                    } else {
+                        console.log(`Skipped uploading object: ${key}`, file);
+                    }
+                    i += 1;
                 }
-            }
 
-            let keyToFile = files.reduce((map, file) => Object.assign(map, { [prefix + file.name]: file }), {});
-            for (let key of Object.keys(keyToLastModified)) {
-                if (!keyToFile[key]) {
-                    console.log(`Deleting object: ${key}`);
-                    promises.push(s3.deleteObject(Object.assign({ Key: key }, baseS3Params(bucketName))).promise())
+                let keyToFile = files.reduce((map, file) => Object.assign(map, { [prefix + file.name]: file }), {});
+                for (let key of Object.keys(keyToMd5)) {
+                    if (!keyToFile[key]) {
+                        console.log(`Deleting object: ${key}`);
+                        promises.push(s3.deleteObject(Object.assign({ Key: key }, baseS3Params(bucketName))).promise())
+                    }
                 }
-            }
-            return Promise.all(promises)
+                if (promises.length === 0) {
+                    console.log(`No changes needed for prefix: ${prefix}`)
+                }
+
+                return Promise.all(promises)
+            });
         });
 }
 
