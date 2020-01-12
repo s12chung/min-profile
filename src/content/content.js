@@ -89,14 +89,16 @@ export function save(content, theme, setStatus) {
 
 export function deploy(content, theme, setStatus) {
     setStatus("Generating Files", true);
-    return generateDeployFiles(content, theme).then((files) => {
-        setStatus("Uploading", true);
-        return reconcileDeploy(files, content.images);
-    }).then(() => {
-        setStatus("Deployed!");
-    }).catch((e) => {
-        console.log("Failure Deploying", e);
-        setStatus(`Failure Deploying: ${e}`);
+    return save(content, theme, setStatus).then(() => {
+        return generateDeployFiles(content, theme).then((files) => {
+            setStatus("Uploading", true);
+            return reconcileDeploy(files, content.images);
+        }).then(() => {
+            setStatus("Deployed!");
+        }).catch((e) => {
+            console.log("Failure Deploying", e);
+            setStatus(`Failure Deploying: ${e}`);
+        });
     });
 }
 
