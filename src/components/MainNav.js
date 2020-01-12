@@ -21,8 +21,8 @@ class MainNav extends Component {
         return (
             <Navbar>
                 <Navbar.Brand>{this.props.title}</Navbar.Brand>
-                <Nav className="mr-auto" activeKey={this.props.headers[0]} onSelect={this.props.onSelect}>
-                    {this.props.headers.map((header) => <Nav.Link key={header} eventKey={header}>{header}</Nav.Link>)}
+                <Nav className="mr-auto" activeKey={this.props.headers[this.props.object.selectedIndex]} onSelect={this.props.onSelect}>
+                    {this.props.headers.map((header) => <Nav.Item key={header}><Nav.Link key={header} eventKey={header}>{header}</Nav.Link></Nav.Item>)}
                     <div className="d-flex ml-3">
                         { this.state.isLoading && <BarLoader/>}
                         <div className="align-self-center">{this.state.status}</div>

@@ -132,7 +132,7 @@ class App extends Component {
           { this.state.isValidDevice ? undefined : "Please use a computer to access this website" }
           { !this.state.initializedSuccess ? <BarLoader/> :
               <Container style={{display: containerDisplay}}>
-                <MainNav title={ADMIN_TITLE} headers={NAV_HEADERS} onSelect={this.onHeaderSelect} download={this.download} save={this.save} deploy={this.deploy}/>
+                <MainNav object={this.state.nav} title={ADMIN_TITLE} headers={NAV_HEADERS} onSelect={this.onHeaderSelect} download={this.download} save={this.save} deploy={this.deploy}/>
                 <Content style={{display: contentDisplay}} object={this.state.content} onImagesChange={this.handleImagesChange}
                          onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
                 <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange}/>
