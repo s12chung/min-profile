@@ -6,7 +6,7 @@ import _ from 'lodash';
 import {getContent, download, save, deploy} from "./content/content";
 
 import {throttledLog} from "./lib/log";
-import {setCredentials} from "./lib/cognito";
+import {setCredentials, minutesLeftForCredentials} from "./lib/cognito";
 
 import MainNav from './components/MainNav';
 import BarLoader from "./components/BarLoader";
@@ -17,6 +17,7 @@ import themeHtml from "./theme/main.html";
 import configScss from "./theme/config.theme.scss";
 import layoutScss from "./theme/layout.theme.scss";
 import landingScss from "./theme/landing.theme.scss";
+import CredentialsAlerts from "./components/CredentialsAlerts";
 
 const ADMIN_TITLE = window.location.hostname;
 const NAV_HEADERS = ["Content", "Theme"];
@@ -34,6 +35,9 @@ class App extends Component {
       isValidDevice: isValidDevice(),
       nav: {
         selectedIndex: 0,
+      },
+      credentialsAlerts: {
+        minutesLeft: undefined,
       },
 
       content: {
@@ -75,6 +79,8 @@ class App extends Component {
           .then(() => {
             return getContent().then((content) => {
               this.setState({ initializedSuccess: true, content: content });
+              this.checkCredentials();
+              window.setInterval(this.checkCredentials, 60 * 1000)
             }).catch((e) => {
               console.log("Failure getting images", e);
             });
@@ -83,6 +89,10 @@ class App extends Component {
           .catch(() => {});
     });
   }
+
+  checkCredentials = () => {
+    this.setState(update(this.state, { credentialsAlerts: { $merge: {  minutesLeft: _.round(minutesLeftForCredentials()) } } }));
+  };
 
   download = (setStatus) => download(ADMIN_TITLE, this.state.content, this.state.theme, setStatus);
   save = (setStatus) => save(this.state.content, this.state.theme, setStatus);
@@ -133,6 +143,7 @@ class App extends Component {
           { !this.state.initializedSuccess ? <BarLoader/> :
               <Container style={{display: containerDisplay}}>
                 <MainNav object={this.state.nav} title={ADMIN_TITLE} headers={NAV_HEADERS} onSelect={this.onHeaderSelect} download={this.download} save={this.save} deploy={this.deploy}/>
+                <CredentialsAlerts object={this.state.credentialsAlerts} save={()=> this.save(()=>{})}/>
                 <Content style={{display: contentDisplay}} object={this.state.content} onImagesChange={this.handleImagesChange}
                          onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
                 <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange}/>

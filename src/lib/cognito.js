@@ -15,7 +15,7 @@ export function setCredentials() {
         let data = queryString.parse(hash);
         window.localStorage.setItem(ID_TOKEN_KEY, data.id_token);
         window.localStorage.setItem(ACCESS_TOKEN_KEY, data.access_token);
-        window.localStorage.setItem(TOKEN_EXPIRES_KEY, ((new Date()).getTime() + parseInt(data.expires_in) * 1000).toString());
+        window.localStorage.setItem(TOKEN_EXPIRES_KEY, ((new Date()).getTime() + _.parseInt(data.expires_in) * 1000).toString());
 
         // redirect to clean url
         window.location.replace(window.location.protocol+'//'+window.location.host+window.location.pathname);
@@ -29,6 +29,10 @@ export function setCredentials() {
     return Promise.resolve();
 }
 
+export function minutesLeftForCredentials() {
+    return (_.parseInt(window.localStorage.getItem(TOKEN_EXPIRES_KEY)) - (new Date()).getTime()) / (60 * 1000);
+}
+
 function authenticate() {
     let query = _.cloneDeep(cognito.oauth);
     query.redirectUri = window.location.protocol+'//'+window.location.host+window.location.pathname;
@@ -37,8 +41,7 @@ function authenticate() {
 }
 
 function getCurrentToken() {
-    let expires = window.localStorage.getItem(TOKEN_EXPIRES_KEY);
-    expires = _.parseInt(expires);
+    let expires = _.parseInt(window.localStorage.getItem(TOKEN_EXPIRES_KEY));
     // expires is 60 mins, if 5 mins has elapsed, get creds
     if (_.isNaN(expires) || (expires - 55 * 60 * 1000) < (new Date().getTime())) return;
 
