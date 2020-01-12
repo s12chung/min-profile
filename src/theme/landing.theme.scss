@@ -869,6 +869,11 @@ body {
                 width: 100%;
                 z-index: _misc(z-index-base) + 1;
         }
+
+        a:hover {
+                text-decoration: none;
+                opacity: 1;
+        }
 }
 
 /* Banner */

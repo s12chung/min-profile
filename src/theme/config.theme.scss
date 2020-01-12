@@ -122,6 +122,14 @@ html[lang="ko"] {
       }
     }
   }
+
+  body.is-mobile {
+    #page-wrapper {
+      h2 {
+        font-size: 2em;
+      }
+    }
+  }
 }
 
 @media all and (max-width: 575px) {
