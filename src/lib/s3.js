@@ -10,7 +10,6 @@ export function reconcileFiles(bucketName, files, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then(( data) => {
             return data.Contents.reduce((map, object) => {
-                if (object.Size === 0) return map; // is directory
                 return Object.assign(map, { [object.Key]: object.LastModified })
             }, {});
         })
@@ -31,7 +30,7 @@ export function reconcileFiles(bucketName, files, prefix) {
             for (let key of Object.keys(keyToLastModified)) {
                 if (!keyToFile[key]) {
                     console.log(`Deleting object: ${key}`);
-                    promises.push(s3.deleteObject(Object.assign({ Key: key }, baseS3Params())).promise())
+                    promises.push(s3.deleteObject(Object.assign({ Key: key }, baseS3Params(bucketName))).promise())
                 }
             }
             return Promise.all(promises)
@@ -46,7 +45,6 @@ export function getFiles(bucketName, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then((response) => {
             return Promise.all( _.without(response.Contents.map((object) =>{
-                if (object.Size === 0) return undefined; // is directory
                 return getFile(bucketName, object.Key)
             }), undefined))
         });
