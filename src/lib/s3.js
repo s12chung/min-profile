@@ -14,6 +14,7 @@ export function reconcileFiles(bucketName, files, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then(( data) => {
             return data.Contents.reduce((map, object) => {
+                if (isFolder(object.Key)) return map;
                 return Object.assign(map, { [object.Key]: object.ETag })
             }, {});
         })
@@ -57,6 +58,7 @@ export function getFiles(bucketName, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then((response) => {
             return Promise.all( _.without(response.Contents.map((object) =>{
+                if (isFolder(object.Key)) return undefined;
                 return getFile(bucketName, object.Key)
             }), undefined))
         });
@@ -75,4 +77,8 @@ function baseS3Params(bucketName) {
 
 function prefixRequest(prefix) {
     return { Prefix: prefix, Delimiter: "/" };
+}
+
+function isFolder(key) {
+    return key.endsWith("/");
 }
