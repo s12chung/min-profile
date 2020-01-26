@@ -11,7 +11,7 @@ const STATUS_TO_OPERATION = {
 class Uploader extends Component {
     constructor(props) {
         super(props);
-        this.state = { syncedWithInitialCount: 0, isReady: false };
+        this.state = { syncedWithInitialCount: 0, isReady: this.isReady(0) };
     }
 
     isReady(syncedWithInitialCount) {
