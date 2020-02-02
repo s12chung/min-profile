@@ -8,9 +8,18 @@ import path from 'path';
 import { readFileAsText } from "../lib/file";
 import {renderHTML} from "../lib/mustache";
 import {renderCssPromise} from "../lib/sass";
-import {WEBSITE_BUCKET_NAME, BACKUP_BUCKET_NAME, getFiles, reconcileFiles} from "../lib/s3";
+import {
+    WEBSITE_BUCKET_NAME,
+    BACKUP_BUCKET_NAME,
+    getFiles,
+    reconcileFiles,
+    getFolders,
+    deletePath,
+    copyPath
+} from "../lib/s3";
 
-const MAIN_BACKUP_PREFIX = "current/";
+const CURRENT_PREFIX = "current/";
+const BACKUP_PREFIX = "backups/";
 const IMAGE_S3_PREFIX = 'images/';
 const THEME_S3_PREFIX = 'theme/';
 const LANG_CODE_SEPARATOR = ',';
@@ -24,6 +33,8 @@ const MARKDOWN_FILE_EXTENSION = ".md";
 const HTML_FILE_EXTENSION = ".html";
 const SASS_FILE_EXTENSION = ".scss";
 
+export const DATE_SEPARATOR = "__";
+
 export const EXT_TO_CONTENT_TYPE = {
     ".json": "application/json",
     ".md": "text/markdown",
@@ -34,8 +45,8 @@ export const EXT_TO_CONTENT_TYPE = {
 
 export function getContent() {
     return Promise.all([
-        getFiles(BACKUP_BUCKET_NAME, MAIN_BACKUP_PREFIX),
-        getFiles(BACKUP_BUCKET_NAME, MAIN_BACKUP_PREFIX + IMAGE_S3_PREFIX),
+        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX),
+        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX + IMAGE_S3_PREFIX),
     ]).then(([files, images]) => {
         let contentPromise;
         let markdownPromises = [];
@@ -64,6 +75,17 @@ export function getContent() {
     });
 }
 
+export function getBackups() {
+    return getFolders(BACKUP_BUCKET_NAME, BACKUP_PREFIX).then((folders) => {
+        return { folders: _.reverse(
+                _.sortBy(folders, (folder) => {
+                    let parts = folder.split(DATE_SEPARATOR);
+                    return parts[parts.length - 1];
+                })
+            ) };
+    });
+}
+
 export function download(title, content, theme, setStatus) {
     setStatus("Generating Files", true);
     return generateDeployFiles(content, theme).then((files) => {
@@ -75,10 +97,40 @@ export function download(title, content, theme, setStatus) {
 }
 
 export function save(content, theme, setStatus) {
+    return saveAt(CURRENT_PREFIX, content, theme, setStatus);
+}
+
+export function createBackup(name, content, theme, setStatus) {
+    if (_.isBlank(name)) name = "empty name";
+    name = [name, (new Date()).toJSON()].join(DATE_SEPARATOR);
+    return saveAt(BACKUP_PREFIX + name + "/", content, theme, setStatus).then(() => name);
+}
+
+export function deleteBackup(name, setStatus) {
+    setStatus(`Deleting Backup - ${name}`, true);
+    return deletePath(BACKUP_BUCKET_NAME, BACKUP_PREFIX + name + "/")
+        .then(() => setStatus("Deleted Backup"))
+}
+
+export function restoreBackup(name, setStatus) {
+    let fromPrefix = BACKUP_PREFIX + name + "/";
+    let toPrefix = CURRENT_PREFIX;
+
+    setStatus(`Restoring Backup - ${name}`, true);
+    deletePath(BACKUP_BUCKET_NAME, toPrefix).then(() => {
+        setStatus(`Copying Backup - ${name}`, true);
+        return copyPath(BACKUP_BUCKET_NAME, fromPrefix, toPrefix);
+    }).then(() => {
+        setStatus(`Restored!`);
+        window.location.reload();
+    });
+}
+
+function saveAt(prefix, content, theme, setStatus) {
     setStatus("Generating Files", true);
     return generateBackupContentFiles(content).then((files) => {
         setStatus("Uploading", true);
-        return reconcileSave(files, generateBackupThemeFiles(theme), content.images);
+        return reconcileSave(prefix, files, generateBackupThemeFiles(theme), content.images);
     }).then(() => {
         setStatus("Saved!");
     }).catch((e) => {
@@ -145,12 +197,12 @@ function generateZip(title, files, images) {
     return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${title}-${(new Date()).toISOString()}.zip`));
 }
 
-function reconcileSave(contentFiles, themeFiles, images) {
+function reconcileSave(prefix, contentFiles, themeFiles, images) {
     console.log("Starting save");
     return Promise.all([
-        reconcileFiles(BACKUP_BUCKET_NAME, contentFiles, MAIN_BACKUP_PREFIX),
-        reconcileFiles(BACKUP_BUCKET_NAME, images, MAIN_BACKUP_PREFIX + IMAGE_S3_PREFIX),
-        reconcileFiles(BACKUP_BUCKET_NAME, themeFiles, MAIN_BACKUP_PREFIX + THEME_S3_PREFIX),
+        reconcileFiles(BACKUP_BUCKET_NAME, contentFiles, prefix),
+        reconcileFiles(BACKUP_BUCKET_NAME, images, prefix + IMAGE_S3_PREFIX),
+        reconcileFiles(BACKUP_BUCKET_NAME, themeFiles, prefix + THEME_S3_PREFIX),
     ]).then(() => {
         console.log("");
     });

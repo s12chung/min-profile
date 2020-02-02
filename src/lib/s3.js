@@ -57,10 +57,17 @@ function uploadFile(bucketName, key, file) {
 export function getFiles(bucketName, prefix) {
     return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
         .then((response) => {
-            return Promise.all( _.without(response.Contents.map((object) =>{
+            return Promise.all(_.without(response.Contents.map((object) => {
                 if (isFolder(object.Key)) return undefined;
                 return getFile(bucketName, object.Key)
             }), undefined))
+        });
+}
+
+export function getFolders(bucketName, prefix) {
+    return s3.listObjects(Object.assign(prefixRequest(prefix), baseS3Params(bucketName))).promise()
+        .then((response) => {
+            return response.CommonPrefixes.map((object) => object.Prefix.replace(prefix, "").replace("/", ""));
         });
 }
 
@@ -68,6 +75,27 @@ function getFile(bucketName, key) {
     return s3.getObject(Object.assign({Key: key}, baseS3Params(bucketName))).promise()
         .then((data) => {
             return new File([data.Body], key.split('/').pop(), { type: data.ContentType, lastModified: data.LastModified.getTime() })
+        });
+}
+
+export function deletePath(bucketName, prefix) {
+    return s3.listObjects(Object.assign({ Prefix: prefix }, baseS3Params(bucketName))).promise()
+        .then((response) => {
+            let objects = response.Contents.map((object) => ({ Key: object.Key }));
+            return s3.deleteObjects(Object.assign({Delete: { Objects: objects }}, baseS3Params(bucketName))).promise();
+        });
+}
+
+export function copyPath(bucketName, fromPrefix, toPrefix) {
+    let bucket = awsConfig.buckets[bucketName];
+    return s3.listObjects(Object.assign({ Prefix: fromPrefix }, baseS3Params(bucketName))).promise()
+        .then((response) => {
+            return Promise.all(response.Contents.map((object) => {
+                let from = object.Key;
+                let to = toPrefix + object.Key.replace(fromPrefix, "");
+                console.log(`Copying object from ${from} to ${to}`);
+                return s3.copyObject({ Bucket: bucket, CopySource: bucket + '/' + from, Key: to }).promise();
+            }));
         });
 }
 

@@ -3,7 +3,16 @@ import {Container} from 'react-bootstrap';
 import update from 'immutability-helper';
 import _ from 'lodash';
 
-import {getContent, download, save, deploy} from "./content/content";
+import {
+  getContent,
+  getBackups,
+  download,
+  save,
+  deploy,
+  createBackup,
+  deleteBackup,
+  restoreBackup
+} from "./content/content";
 
 import {throttledLog} from "./lib/log";
 import {setCredentials, minutesLeftForCredentials} from "./lib/cognito";
@@ -12,6 +21,7 @@ import MainNav from './components/MainNav';
 import BarLoader from "./components/BarLoader";
 import Content from './components/Content';
 import Theme from './components/Theme';
+import Backups from './components/Backups';
 
 import themeHtml from "./theme/main.html";
 import configScss from "./theme/config.theme.scss";
@@ -20,7 +30,7 @@ import landingScss from "./theme/landing.theme.scss";
 import CredentialsAlerts from "./components/CredentialsAlerts";
 
 const ADMIN_TITLE = window.location.hostname;
-const NAV_HEADERS = ["Content", "Theme"];
+const NAV_HEADERS = ["Content", "Theme", "Backups"];
 const tLog = throttledLog();
 
 export const PromptContext = React.createContext({});
@@ -56,6 +66,10 @@ class App extends Component {
             { name: "layout.scss", content: layoutScss},
             { name: "landing.scss", content: landingScss},
         ],
+      },
+
+      backups: {
+        folders: [],
       }
     };
   }
@@ -77,12 +91,12 @@ class App extends Component {
     this.setState({ initialized: true }, () => {
       setCredentials()
           .then(() => {
-            return getContent().then((content) => {
-              this.setState({ initializedSuccess: true, content: content });
+            return Promise.all([getContent(), getBackups()]).then(([content, backups]) => {
+              this.setState({ initializedSuccess: true, content: content, backups: backups });
               this.checkCredentials();
               window.setInterval(this.checkCredentials, 60 * 1000)
             }).catch((e) => {
-              console.log("Failure getting images", e);
+              console.log("Failure loading content", e);
             });
           })
           // do nothing and redirect
@@ -132,10 +146,31 @@ class App extends Component {
     });
   };
 
+  createBackup = (name, setStatus) => {
+    return createBackup(name, this.state.content, this.state.theme, setStatus)
+        .then((name) => {
+          this.setState(update(this.state, { backups: { folders: { $splice: [[0, 0, name]] } } }));
+          return name;
+        });
+  };
+
+  deleteBackup = (name, backups, setStatus) => Promise.resolve().then(() => {
+    return deleteBackup(name, setStatus).then(() => {
+      this.setState(update(this.state, { backups: backups }));
+    });
+  });
+
+  restoreBackup = (name, setStatus) => {
+    this.createBackup("before restore", setStatus).then(() => {
+      return restoreBackup(name, setStatus);
+    })
+  };
+
   render () {
     let containerDisplay = this.state.isValidDevice ? "" : "none";
     let contentDisplay = this.state.nav.selectedIndex === 0 ? "" : "none";
     let themeDisplay = this.state.nav.selectedIndex === 1 ? "" : "none";
+    let backupsDeploy = this.state.nav.selectedIndex === 2 ? "" : "none";
 
     return (
         <div>
@@ -147,6 +182,7 @@ class App extends Component {
                 <Content style={{display: contentDisplay}} object={this.state.content} onImagesChange={this.handleImagesChange}
                          onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
                 <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange}/>
+                <Backups style={{display: backupsDeploy}} object={this.state.backups} createBackup={this.createBackup} deleteBackup={this.deleteBackup} restoreBackup={this.restoreBackup}/>
               </Container>
           }
         </div>
