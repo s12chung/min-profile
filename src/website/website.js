@@ -18,10 +18,16 @@ import {
     copyPath
 } from "../lib/s3";
 
+import themeHtml from "../theme/main.html";
+import configScss from "../theme/config.theme.scss";
+import layoutScss from "../theme/layout.theme.scss";
+import landingScss from "../theme/landing.theme.scss";
+
 const CURRENT_PREFIX = "current/";
 const BACKUP_PREFIX = "backups/";
 const IMAGE_S3_PREFIX = 'images/';
 const THEME_S3_PREFIX = 'theme/';
+const FAVICON_PREFIX = "favicon/";
 const LANG_CODE_SEPARATOR = ',';
 
 const INDEX_FILE_NAME = "index.html";
@@ -75,6 +81,23 @@ export function getContent() {
     });
 }
 
+export function getTheme() {
+    return Promise.all([
+        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX + FAVICON_PREFIX),
+    ]).then(([faviconFiles]) => {
+        return {
+            faviconFiles: [],
+            initialFaviconFiles: faviconFiles,
+            files: [
+                {name: "main.html", content: themeHtml},
+                {name: "config.scss", content: configScss},
+                {name: "layout.scss", content: layoutScss},
+                {name: "landing.scss", content: landingScss},
+            ],
+        };
+    });
+}
+
 export function getBackups() {
     return getFolders(BACKUP_BUCKET_NAME, BACKUP_PREFIX).then((folders) => {
         return { folders: _.reverse(
@@ -90,7 +113,7 @@ export function download(title, content, theme, setStatus) {
     setStatus("Generating Files", true);
     return generateDeployFiles(content, theme).then((files) => {
         setStatus("Generating Zip", true);
-        return generateZip(title, files, content.images);
+        return generateZip(title, files, content.images, theme.faviconFiles);
     }).then(() => {
         setStatus("");
     });
@@ -130,7 +153,7 @@ function saveAt(prefix, content, theme, setStatus) {
     setStatus("Generating Files", true);
     return generateBackupContentFiles(content).then((files) => {
         setStatus("Uploading", true);
-        return reconcileSave(prefix, files, generateBackupThemeFiles(theme), content.images);
+        return reconcileSave(prefix, files, generateBackupThemeFiles(theme), content.images, theme.faviconFiles);
     }).then(() => {
         setStatus("Saved!");
     }).catch((e) => {
@@ -144,7 +167,7 @@ export function deploy(content, theme, setStatus) {
     return save(content, theme, setStatus).then(() => {
         return generateDeployFiles(content, theme).then((files) => {
             setStatus("Uploading", true);
-            return reconcileDeploy(files, content.images);
+            return reconcileDeploy(files, content.images, theme.faviconFiles);
         }).then(() => {
             setStatus("Deployed!");
         }).catch((e) => {
@@ -185,7 +208,7 @@ function generateDeployFiles(content, theme) {
     );
 }
 
-function generateZip(title, files, images) {
+function generateZip(title, files, images, faviconFiles) {
     let zip = new JSZip();
     for (let file of files) {
         zip.file(file.name, file.arrayBuffer());
@@ -193,29 +216,29 @@ function generateZip(title, files, images) {
     for (let file of images) {
         zip.file(IMAGE_S3_PREFIX + file.name, file.arrayBuffer());
     }
+    for (let file of faviconFiles) {
+        zip.file(file.name, file.arrayBuffer());
+    }
 
     return zip.generateAsync({type:"blob"}).then((blob) => saveAs(blob, `${title}-${(new Date()).toISOString()}.zip`));
 }
 
-function reconcileSave(prefix, contentFiles, themeFiles, images) {
+function reconcileSave(prefix, contentFiles, themeFiles, images, faviconFiles) {
     console.log("Starting save");
     return Promise.all([
         reconcileFiles(BACKUP_BUCKET_NAME, contentFiles, prefix),
         reconcileFiles(BACKUP_BUCKET_NAME, images, prefix + IMAGE_S3_PREFIX),
         reconcileFiles(BACKUP_BUCKET_NAME, themeFiles, prefix + THEME_S3_PREFIX),
-    ]).then(() => {
-        console.log("");
-    });
+        reconcileFiles(BACKUP_BUCKET_NAME, faviconFiles, prefix + FAVICON_PREFIX),
+    ]);
 }
 
-function reconcileDeploy(files, images) {
+function reconcileDeploy(files, images, faviconFiles) {
     console.log("Starting deploy");
     return Promise.all([
-        reconcileFiles(WEBSITE_BUCKET_NAME, files),
+        reconcileFiles(WEBSITE_BUCKET_NAME, _.flatten([files, faviconFiles])),
         reconcileFiles(WEBSITE_BUCKET_NAME, images, IMAGE_S3_PREFIX),
-    ]).then(() => {
-        console.log("");
-    });
+    ]);
 }
 
 function mustacheVars(content) {

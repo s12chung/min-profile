@@ -11,7 +11,8 @@ import {
   deploy,
   createBackup,
   deleteBackup,
-  restoreBackup
+  restoreBackup,
+  getTheme
 } from "./website/website";
 
 import {throttledLog} from "./lib/log";
@@ -23,10 +24,6 @@ import Content from './components/Content';
 import Theme from './components/Theme';
 import Backups from './components/Backups';
 
-import themeHtml from "./theme/main.html";
-import configScss from "./theme/config.theme.scss";
-import layoutScss from "./theme/layout.theme.scss";
-import landingScss from "./theme/landing.theme.scss";
 import CredentialsAlerts from "./components/CredentialsAlerts";
 
 const ADMIN_TITLE = window.location.hostname;
@@ -60,12 +57,9 @@ class App extends Component {
       },
 
       theme: {
-        files: [
-            { name: "main.html", content: themeHtml},
-            { name: "config.scss", content: configScss},
-            { name: "layout.scss", content: layoutScss},
-            { name: "landing.scss", content: landingScss},
-        ],
+        faviconFiles: [],
+        initialFaviconFiles: undefined,
+        files: [],
       },
 
       backups: {
@@ -91,12 +85,12 @@ class App extends Component {
     this.setState({ initialized: true }, () => {
       setCredentials()
           .then(() => {
-            return Promise.all([getContent(), getBackups()]).then(([content, backups]) => {
-              this.setState({ initializedSuccess: true, content: content, backups: backups });
+            return Promise.all([getContent(), getBackups(), getTheme()]).then(([content, backups, theme]) => {
+              this.setState({ initializedSuccess: true, content: content, backups: backups, theme: theme });
               this.checkCredentials();
               window.setInterval(this.checkCredentials, 60 * 1000)
             }).catch((e) => {
-              console.log("Failure loading content", e);
+              console.log("Failure loading deploy", e);
             });
           })
           // do nothing and redirect
@@ -137,6 +131,10 @@ class App extends Component {
 
   handleSharedChange = (state) =>{
     this.setState(update(this.state, { content: { $merge: { shared: state } }}));
+  };
+
+  handleFaviconFilesChange = (operation, file) => {
+    this.setState(update(this.state, { theme: { faviconFiles: this.operationToImageSpec(operation, file) } }));
   };
 
   handleThemeFileChange = (index, themeUpdate, callback) => {
@@ -181,7 +179,7 @@ class App extends Component {
                 <CredentialsAlerts object={this.state.credentialsAlerts} save={()=> this.save(()=>{})}/>
                 <Content style={{display: contentDisplay}} object={this.state.content} onImagesChange={this.handleImagesChange}
                          onSharedChange={this.handleSharedChange} onTranslationChange={this.handleTranslationChange}/>
-                <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange}/>
+                <Theme style={{display: themeDisplay}} object={this.state.theme} onFileChange={this.handleThemeFileChange} onFaviconFilesChange={this.handleFaviconFilesChange}/>
                 <Backups style={{display: backupsDeploy}} object={this.state.backups} createBackup={this.createBackup} deleteBackup={this.deleteBackup} restoreBackup={this.restoreBackup}/>
               </Container>
           }

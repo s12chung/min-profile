@@ -45,7 +45,7 @@ class Uploader extends Component {
                 SubmitButtonComponent={null}
                 previewShowImageTitle={true}
 
-                accept="image/*"
+                accept={this.props.accept}
                 disabled={!this.state.isReady}
                 initialFiles={this.props.initialFiles}
             />
