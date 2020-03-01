@@ -18,16 +18,11 @@ import {
     copyPath
 } from "../lib/s3";
 
-import themeHtml from "../theme/main.html";
-import configScss from "../theme/config.theme.scss";
-import layoutScss from "../theme/layout.theme.scss";
-import landingScss from "../theme/landing.theme.scss";
-
 const CURRENT_PREFIX = "current/";
 const BACKUP_PREFIX = "backups/";
 const IMAGE_S3_PREFIX = 'images/';
 const THEME_S3_PREFIX = 'theme/';
-const FAVICON_PREFIX = "favicon/";
+const FAVICON_S3_PREFIX = "favicon/";
 const LANG_CODE_SEPARATOR = ',';
 
 const INDEX_FILE_NAME = "index.html";
@@ -83,18 +78,16 @@ export function getContent() {
 
 export function getTheme() {
     return Promise.all([
-        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX + FAVICON_PREFIX),
-    ]).then(([faviconFiles]) => {
-        return {
-            faviconFiles: [],
-            initialFaviconFiles: faviconFiles,
-            files: [
-                {name: "main.html", content: themeHtml},
-                {name: "config.scss", content: configScss},
-                {name: "layout.scss", content: layoutScss},
-                {name: "landing.scss", content: landingScss},
-            ],
-        };
+        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX + THEME_S3_PREFIX),
+        getFiles(BACKUP_BUCKET_NAME, CURRENT_PREFIX + FAVICON_S3_PREFIX),
+    ]).then(([themeFiles, faviconFiles]) => {
+        return Promise.all(themeFiles.map((f) => readFileAsText(f))).then((themeFilesContents) => {
+            return {
+                faviconFiles: [],
+                initialFaviconFiles: faviconFiles,
+                files: themeFiles.map((f, i) => ({ name: f.name, content: themeFilesContents[i] })),
+            };
+        });
     });
 }
 
@@ -194,7 +187,7 @@ function generateBackupContentFiles(content) {
 }
 
 function generateBackupThemeFiles(theme) {
-    return theme.files.map((file) => new File([theme.name], file.name, { type: EXT_TO_CONTENT_TYPE[path.extname(file.name)] }));
+    return theme.files.map((file) => new File([file.content], file.name, { type: EXT_TO_CONTENT_TYPE[path.extname(file.name)] }));
 }
 
 function textContent(content) {
@@ -229,7 +222,7 @@ function reconcileSave(prefix, contentFiles, themeFiles, images, faviconFiles) {
         reconcileFiles(BACKUP_BUCKET_NAME, contentFiles, prefix),
         reconcileFiles(BACKUP_BUCKET_NAME, images, prefix + IMAGE_S3_PREFIX),
         reconcileFiles(BACKUP_BUCKET_NAME, themeFiles, prefix + THEME_S3_PREFIX),
-        reconcileFiles(BACKUP_BUCKET_NAME, faviconFiles, prefix + FAVICON_PREFIX),
+        reconcileFiles(BACKUP_BUCKET_NAME, faviconFiles, prefix + FAVICON_S3_PREFIX),
     ]);
 }
 
