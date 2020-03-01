@@ -12,7 +12,7 @@ import {
   createBackup,
   deleteBackup,
   restoreBackup
-} from "./content/content";
+} from "./website/website";
 
 import {throttledLog} from "./lib/log";
 import {setCredentials, minutesLeftForCredentials} from "./lib/cognito";

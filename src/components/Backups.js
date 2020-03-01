@@ -2,7 +2,7 @@ import React, {Component} from 'react';
 import {Col, Row, Button, Form, FormControl, FormLabel} from 'react-bootstrap';
 import BarLoader from "./BarLoader";
 import update from "immutability-helper";
-import {DATE_SEPARATOR} from "../content/content";
+import {DATE_SEPARATOR} from "../website/website";
 
 class Backups extends Component {
     constructor(props) {
