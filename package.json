@@ -43,7 +43,7 @@
     "js-md5": "^0.7.3",
     "jszip": "^3.2.2",
     "lodash": "^4.17.15",
-    "marked": "^0.8.0",
+    "marked": "^4.0.10",
     "matchmedia-polyfill": "^0.3.2",
     "mini-css-extract-plugin": "0.8.0",
     "mustache": "^3.1.0",
